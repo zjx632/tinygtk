@@ -1,13 +1,7 @@
 EXPORTS
-	textdomain
-	gettext
-	bind_textdomain_codeset
-	bindtextdomain
-
 	opendir
 	readdir
 	closedir
-
 	g_completion_add_items
 	g_completion_complete
 	g_completion_free

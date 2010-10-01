@@ -1343,7 +1343,7 @@ find_window_enum_proc (HWND   hwnd,
   if (!IsWindowVisible (hwnd))
     return TRUE;
 
-  if (_winver >= 0x0501)
+  if (WINVER >= 0x0501)
     {
       class_name[0]=0;
       GetClassName (hwnd, class_name, 64);

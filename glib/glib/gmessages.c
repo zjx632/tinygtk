@@ -88,6 +88,9 @@ static GLogLevelFlags g_log_msg_prefix = G_LOG_LEVEL_ERROR | G_LOG_LEVEL_WARNING
 #  include <windows.h>
 #  undef STRICT
 #  include <process.h>          /* For _getpid() */
+#  ifndef getpid
+#    define getpid GetCurrentProcessId
+#  endif
 static gboolean win32_keep_fatal_message = FALSE;
 
 /* This default message will usually be overwritten. */

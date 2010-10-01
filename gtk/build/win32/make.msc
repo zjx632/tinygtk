@@ -19,7 +19,7 @@ DEBUGINFO = -Zi
 LINKDEBUG = /debug
 !ENDIF
 
-LDFLAGS = /link /machine:ix86 $(LINKDEBUG)
+LDFLAGS = /link /machine:ix86 $(LINKDEBUG) msvcrt_winxp.obj
 
 !IFNDEF TOP
 TOP = ..

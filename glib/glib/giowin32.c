@@ -45,6 +45,10 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+#ifndef fstat
+#define fstat _fstat
+#endif
+
 #include "glibintl.h"
 
 typedef struct _GIOWin32Channel GIOWin32Channel;

@@ -59,6 +59,9 @@
 
 #ifdef G_OS_WIN32
 #include <io.h>
+#ifndef stat
+#define stat _stat
+#endif
 #endif
 
 typedef struct _GtkRcSet    GtkRcSet;

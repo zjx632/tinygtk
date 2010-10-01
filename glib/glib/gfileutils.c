@@ -71,6 +71,10 @@
 #define G_IS_DIR_SEPARATOR(c) (c == G_DIR_SEPARATOR)
 #endif
 
+#ifndef stat
+#define stat _stat
+#endif
+
 /**
  * g_file_test:
  * @filename: a filename to test

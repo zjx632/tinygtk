@@ -423,7 +423,7 @@ RegisterGdkClass (GdkWindowType wtype)
 	{
 	  wcl.lpszClassName = "xchatWindowTemp";
 	  wcl.style |= CS_SAVEBITS;
-	  if (_winver >= 0x0501) /* Windows XP (5.1) or above */
+	  if (WINVER >= 0x0501) /* Windows XP (5.1) or above */
 	    wcl.style |= 0x00020000; /* CS_DROPSHADOW */
 	  ONCE_PER_CLASS();
 	  klassTEMP = RegisterClassEx (&wcl);
