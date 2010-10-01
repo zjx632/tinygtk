@@ -1,0 +1,76 @@
+http://forum.xchat.org/viewtopic.php?p=18537
+http://xc2free.9.forumer.com/index.php?showtopic=7
+http://xc2free.9.forumer.com/index.php?showtopic=4
+
+http://xchat.org/files/binary/win32/mini-src/old/glibgtkpango245c.tar.bz2
+http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.9.2.tar.gz
+
+extract both to same dir
+
+http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/sezero_20100925/mingw-w32-bin_i686-mingw_20100925_sezero.zip/download
+http://ftp.mozilla.org/pub/mozilla.org/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe
+
+
+
+cmd
+
+set PATH=C:\mozilla-build\mingw32\bin;C:\mozilla-build\msys\bin;c:\WinDDK\7600.16385.1\bin\x86\x86;c:\WinDDK\7600.16385.1\bin\x86;c:\Program Files\Microsoft Visual Studio 10.0\VC\bin;c:\Program Files\Microsoft SDKs\Windows\v7.0A\Bin;c:\Program Files\Microsoft Visual Studio 10.0\Common7\IDE
+set PATH=%PATH%;C:\mozilla-build\build\xchat-dev32\bin
+set INCLUDE=c:\WinDDK\7600.16385.1\inc\api;c:\WinDDK\7600.16385.1\inc\crt;c:\WinDDK\7600.16385.1\inc\api\crt\stl70
+;C:\Program Files\Microsoft SDKs\Windows\v7.0A\Include
+set LIB=c:\WinDDK\7600.16385.1\lib\wxp\i386;c:\WinDDK\7600.16385.1\lib\Crt\i386
+
+cd gtk/gtk
+nmake -f makefile.msc
+
+cd ..\gdk\win32
+nmake -f makefile.msc
+
+cd ..
+nmake -f makefile.msc
+
+copy libiconv-1.8\include\iconv.h.msvc-static to glib\glib\iconv.h
+cd glib\glib
+nmake -f makefile.msc
+(fail)
+cd gnulib
+nmake -f makefile.msc
+cd ..
+nmake -f makefile.msc glib-2.2s.lib
+copy glib-2.2s.lib to root
+
+cd ..\gobject
+nmake -f makefile.msc
+(error)
+nmake -f makefile.msc gobject-2.2s.lib
+copy gobject-2.2s.lib to root
+
+cd ..\gmodule
+paste tlhelp32.h to gmodule-win32.c
+nmake -f makefile.msc
+(error)
+link -lib /out:gmodule-2.2s.lib gmodule.obj
+copy gmodule-2.2s.lib to root
+
+cd ..\build\win32\dirent
+nmake -f makefile.msc
+copy dirent.lib to root
+
+cd ..\..\..\..\gtk\gdk-pixbuf
+nmake -f makefile.msc
+(error)
+nmake -f makefile.msc gdk_pixbuf-2.2s.lib
+copy gdk_pixbuf-2.2s.lib to root
+
+cd pango\pango
+paste usp10.h to basic-win32.c
+nmake -f makefile.msc
+(error)
+copy pango-1.2s.lib and pangowin32-1.2s.lib to root
+
+cd libiconv-1.8
+nmake -f Makefile.msvc
+copy iconv.lib to root
+
+cd to root
+nmake -f makefile.msc
