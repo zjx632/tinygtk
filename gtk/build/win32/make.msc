@@ -111,7 +111,7 @@ ZLIB_LIBS = $(ZLIB)\zlib.lib
 # Compiler to use.
 
 CCOMPILER = cl
-CC = $(CCOMPILER) -G5 -GF $(CRUNTIME) -W3 -nologo
+CC = $(CCOMPILER) -GF $(CRUNTIME) -W3 -nologo
 
 ################
 # The including makefile should define INCLUDES, DEFINES and
