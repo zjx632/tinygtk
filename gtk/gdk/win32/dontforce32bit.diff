@@ -1,0 +1,10 @@
+--- gtk+/gdk/win32/gdkvisual-win32.c	2004-04-21 21:25:04.000000000 +1000
++++ gtk+p1/gdk/win32/gdkvisual-win32.c	2004-04-21 21:25:06.000000000 +1000
+@@ -238,7 +238,6 @@
+     }
+   else if (bitspixel == 24 || bitspixel == 32)
+     {
+-      bitspixel = 24;
+       system_visual->type = GDK_VISUAL_TRUE_COLOR;
+       system_visual->red_mask   = 0x00FF0000;
+       system_visual->green_mask = 0x0000FF00;

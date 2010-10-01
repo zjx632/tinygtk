@@ -1,0 +1,1581 @@
+? PORK
+? pango/trivial.c
+Index: pango/Makefile.am
+===================================================================
+RCS file: /cvs/gnome/pango/pango/Makefile.am,v
+retrieving revision 1.87
+diff -u -r1.87 Makefile.am
+--- pango/Makefile.am	17 Feb 2003 22:04:27 -0000	1.87
++++ pango/Makefile.am	28 Feb 2003 14:57:05 -0000
+@@ -143,6 +143,7 @@
+ 	pango-utils.c	   \
+ 	reorder-items.c    \
+ 	shape.c	           \
++	trivial.c	   \
+ 	$(pango_built_cfiles)
+ 
+ libpangox_1_0_la_SOURCES = \
+Index: pango/glyphstring.c
+===================================================================
+RCS file: /cvs/gnome/pango/pango/glyphstring.c,v
+retrieving revision 1.16
+diff -u -r1.16 glyphstring.c
+--- pango/glyphstring.c	26 Nov 2002 01:47:56 -0000	1.16
++++ pango/glyphstring.c	28 Feb 2003 14:57:06 -0000
+@@ -58,16 +58,16 @@
+   while (new_len > string->space)
+     {
+       if (string->space == 0)
+-        string->space = 1;
++        string->space = 16;
+       else
+         string->space *= 2;
+-      
++
+       if (string->space < 0)
+         g_error ("%s: glyph string length overflows maximum integer size", G_STRLOC);
+     }
+-  
+-  string->glyphs = g_realloc (string->glyphs, string->space * sizeof (PangoGlyphInfo));
+-  string->log_clusters = g_realloc (string->log_clusters, string->space * sizeof (gint));
++
++  string->glyphs = g_renew (PangoGlyphInfo, string->glyphs, string->space);
++  string->log_clusters = g_renew (gint, string->log_clusters, string->space);
+   string->num_glyphs = new_len;
+ }
+ 
+@@ -99,10 +99,13 @@
+ 
+   *new_string = *string;
+ 
+-  new_string->glyphs = g_memdup (string->glyphs,
+-				 string->space * sizeof (PangoGlyphInfo));
+-  new_string->log_clusters = g_memdup (string->log_clusters,
+-				       string->space * sizeof (gint));
++  new_string->glyphs = g_new (PangoGlyphInfo, string->space);
++  memcpy (new_string->glyphs, string->glyphs,
++	  string->num_glyphs * sizeof (PangoGlyphInfo));
++
++  new_string->log_clusters = g_new (gint, string->space);
++  memcpy (new_string->log_clusters, string->log_clusters,
++	  string->num_glyphs * sizeof (gint));
+ 
+   return new_string;
+ }
+Index: pango/pango-attributes.c
+===================================================================
+RCS file: /cvs/gnome/pango/pango/pango-attributes.c,v
+retrieving revision 1.33
+diff -u -r1.33 pango-attributes.c
+--- pango/pango-attributes.c	3 Dec 2002 06:21:49 -0000	1.33
++++ pango/pango-attributes.c	28 Feb 2003 14:57:06 -0000
+@@ -30,6 +30,7 @@
+   guint ref_count;
+   GSList *attributes;
+   GSList *attributes_tail;
++  guint shallow : 1;
+ };
+ 
+ struct _PangoAttrIterator
+@@ -738,6 +739,7 @@
+   list->ref_count = 1;
+   list->attributes = NULL;
+   list->attributes_tail = NULL;
++  list->shallow = FALSE;
+   
+   return list;
+ }
+@@ -775,13 +777,16 @@
+   list->ref_count--;
+   if (list->ref_count == 0)
+     {
+-      tmp_list = list->attributes;
+-      while (tmp_list)
++      if (!list->shallow)
+ 	{
+-	  PangoAttribute *attr = tmp_list->data;
+-	  tmp_list = tmp_list->next;
++	  tmp_list = list->attributes;
++	  while (tmp_list)
++	    {
++	      PangoAttribute *attr = tmp_list->data;
++	      tmp_list = tmp_list->next;
+ 
+-	  attr->klass->destroy (attr);
++	      attr->klass->destroy (attr);
++	    }
+ 	}
+ 
+       g_slist_free (list->attributes);
+@@ -826,6 +831,33 @@
+   return new;
+ }
+ 
++/**
++ * pango_attr_list_copy_shallow:
++ * @list: a #PangoAttrList
++ *
++ * Copy @list and return an identical, new list that does not own its contents.
++ * The result must not be modified, apart from _unref, and _filter.
++ *
++ * Return value: new attribute list
++ **/
++PangoAttrList *
++pango_attr_list_copy_shallow (PangoAttrList *list)
++{
++  PangoAttrList *new;
++  
++  g_return_val_if_fail (list != NULL, NULL);
++
++  new = pango_attr_list_new ();
++  new->shallow = TRUE;
++  if (list->attributes)
++    {
++      new->attributes = g_slist_copy (list->attributes);
++      new->attributes_tail = g_slist_last (new->attributes);
++    }
++
++  return new;
++}
++
+ static void
+ pango_attr_list_insert_internal (PangoAttrList  *list,
+ 				 PangoAttribute *attr,
+@@ -1552,6 +1584,7 @@
+ 	  if (!new)
+ 	    {
+ 	      new = pango_attr_list_new ();
++	      new->shallow = list->shallow;
+ 	      new->attributes = new->attributes_tail = tmp_list;
+ 	    }
+ 	  else
+Index: pango/pango-attributes.h
+===================================================================
+RCS file: /cvs/gnome/pango/pango/pango-attributes.h,v
+retrieving revision 1.20
+diff -u -r1.20 pango-attributes.h
+--- pango/pango-attributes.h	10 Dec 2002 23:45:26 -0000	1.20
++++ pango/pango-attributes.h	28 Feb 2003 14:57:06 -0000
+@@ -185,6 +185,7 @@
+ void               pango_attr_list_ref           (PangoAttrList  *list);
+ void               pango_attr_list_unref         (PangoAttrList  *list);
+ PangoAttrList *    pango_attr_list_copy          (PangoAttrList  *list);
++PangoAttrList *    pango_attr_list_copy_shallow  (PangoAttrList  *list);
+ void               pango_attr_list_insert        (PangoAttrList  *list,
+ 						  PangoAttribute *attr);
+ void               pango_attr_list_insert_before (PangoAttrList  *list,
+Index: pango/pango-context.c
+===================================================================
+RCS file: /cvs/gnome/pango/pango/pango-context.c,v
+retrieving revision 1.50
+diff -u -r1.50 pango-context.c
+--- pango/pango-context.c	12 Feb 2003 22:16:11 -0000	1.50
++++ pango/pango-context.c	28 Feb 2003 14:57:06 -0000
+@@ -36,6 +36,15 @@
+   PangoFontDescription *font_desc;
+ 
+   PangoFontMap *font_map;
++
++  struct {
++    PangoFontDescription *current_desc;
++    PangoFontset *current_fonts;
++    PangoLanguage *language;
++    PangoFont *font;
++  } last_fontset;
++
++  GHashTable *trivial_cache;
+ };
+ 
+ struct _PangoContextClass
+@@ -44,6 +53,138 @@
+   
+ };
+ 
++static void
++invalidate_last_fontset_cache (PangoContext *context)
++{
++  if (context->last_fontset.current_desc)
++    {
++      pango_font_description_free (context->last_fontset.current_desc);
++      context->last_fontset.current_desc = NULL;
++    }
++  if (context->last_fontset.current_fonts)
++    {
++      g_object_unref (context->last_fontset.current_fonts);
++      context->last_fontset.current_fonts = NULL;
++    }
++  context->last_fontset.language = NULL;
++  if (context->last_fontset.font)
++    {
++      g_object_unref (context->last_fontset.font);
++      context->last_fontset.font = NULL;
++    }
++}
++
++static void
++pango_context_maybe_load_fontset (PangoContext *context,
++				  const PangoFontDescription *next_desc,
++				  PangoLanguage *next_language)
++{
++  if (context->last_fontset.current_desc == NULL ||
++      context->last_fontset.language != next_language ||
++      !pango_font_description_equal (context->last_fontset.current_desc, next_desc))
++    {
++      invalidate_last_fontset_cache (context);
++      context->last_fontset.current_desc = pango_font_description_copy (next_desc);
++      context->last_fontset.language = next_language;
++      context->last_fontset.current_fonts =
++	pango_font_map_load_fontset (context->font_map,
++				     context,
++				     context->last_fontset.current_desc,
++				     context->last_fontset.language);
++    }
++}
++
++static PangoFont *
++pango_context_get_font (PangoContext *context,
++			gunichar wc)
++{
++  return pango_fontset_get_font (context->last_fontset.current_fonts, wc);
++}
++
++PangoFontDescription *
++_pango_context_font_description (PangoContext *context)
++{
++  return pango_font_description_copy_static (context->font_desc);
++}
++
++typedef struct _PangoTrivialCache {
++  PangoFontDescription *desc;
++  PangoLanguage *language;
++} PangoTrivialCache;
++
++static guint
++ptc_hash (const PangoTrivialCache *ptc)
++{
++  return (pango_font_description_hash (ptc->desc) ^
++	  g_str_hash (pango_language_to_string (ptc->language)));
++}
++
++static gboolean
++ptc_equal (const PangoTrivialCache *a, const PangoTrivialCache *b)
++{
++  if (a->language != b->language &&
++      strcmp (pango_language_to_string (a->language),
++	      pango_language_to_string (b->language)))
++      return FALSE;
++
++  return pango_font_description_equal (a->desc, b->desc);
++}
++
++static void
++ptc_destroy (PangoTrivialCache *ptc)
++{
++  pango_font_description_free (ptc->desc);
++  /* Nothing for ptc->language */
++  g_free (ptc);
++}
++
++PangoTrivial *
++_pango_context_get_trivial (PangoContext *context,
++			    PangoFontDescription *desc,
++			    PangoLanguage *language)
++{
++  /*
++   * For purposes of getting a font from a fontset and a shaper from that
++   * font, use this single character as a guinea pig.  That probably violates
++   * Pango's feelings six ways from Sunday, :-|
++   */
++  const gunichar somechar = '0';
++  PangoTrivial *pt;
++  PangoTrivialCache ptc;
++
++  if (!language)
++    {
++      language = context->language;
++      if (!language)
++	return NULL;
++    }
++
++  ptc.desc = desc;
++  ptc.language = language;
++  pt = g_hash_table_lookup (context->trivial_cache, &ptc);
++
++  if (!pt)
++    {
++      PangoTrivialCache *key;
++
++      pango_context_maybe_load_fontset (context, desc, language);
++      if (!context->last_fontset.font)
++	context->last_fontset.font = pango_context_get_font (context, somechar);
++      pt = _pango_trivial_new (context->last_fontset.font, language, somechar);
++      if (!pt)
++	return NULL;
++
++      key = g_new (PangoTrivialCache, 1);
++      key->desc = pango_font_description_copy (ptc.desc);
++      key->language = ptc.language;
++      g_hash_table_insert (context->trivial_cache, key, pt);
++    }
++
++  _pango_trivial_ref (pt);
++  return pt;
++}
++
++
+ static void add_engines (PangoContext      *context,
+ 			 const gchar       *text,
+                          gint               start_index,
+@@ -101,6 +242,16 @@
+   pango_font_description_set_weight (context->font_desc, PANGO_WEIGHT_NORMAL);
+   pango_font_description_set_stretch (context->font_desc, PANGO_STRETCH_NORMAL);
+   pango_font_description_set_size (context->font_desc, 12 * PANGO_SCALE);
++
++  context->last_fontset.current_desc = NULL;
++  context->last_fontset.current_fonts = NULL;
++  context->last_fontset.language = NULL;
++
++  context->trivial_cache =
++    g_hash_table_new_full ((GHashFunc)ptc_hash,
++			   (GEqualFunc)ptc_equal,
++			   (GDestroyNotify)ptc_destroy,
++			   (GDestroyNotify)_pango_trivial_unref);
+ }
+ 
+ static void
+@@ -124,7 +275,10 @@
+     g_object_unref (context->font_map);
+ 
+   pango_font_description_free (context->font_desc);
+-  
++
++  invalidate_last_fontset_cache (context);
++  g_hash_table_destroy (context->trivial_cache);
++
+   G_OBJECT_CLASS (parent_class)->finalize (object);
+ }
+ 
+@@ -160,13 +314,18 @@
+   g_return_if_fail (PANGO_IS_CONTEXT (context));
+   g_return_if_fail (!font_map || PANGO_IS_FONT_MAP (font_map));
+ 
+-  if (context->font_map)
+-    g_object_unref (context->font_map);
++  if (font_map == context->font_map)
++    return;
+ 
++  /* Ref before unref.  */
+   if (font_map)
+     g_object_ref (font_map);
+ 
++  if (context->font_map)
++    g_object_unref (context->font_map);
++
+   context->font_map = font_map;
++  invalidate_last_fontset_cache (context);
+ }
+ 
+ /**
+@@ -236,7 +395,7 @@
+ PangoFontset *
+ pango_context_load_fontset (PangoContext               *context,
+ 			    const PangoFontDescription *desc,
+-			     PangoLanguage             *language)
++			    PangoLanguage              *language)
+ {
+   g_return_val_if_fail (context != NULL, NULL);
+   g_return_val_if_fail (pango_font_description_get_family (desc) != NULL, NULL);
+@@ -588,12 +747,9 @@
+ 	     PangoAnalysis     *analyses)
+ {
+   const char *pos;
+-  PangoLanguage *language = NULL;
+   int next_index;
+   GSList *extra_attrs = NULL;
+   PangoMap *lang_map = NULL;
+-  PangoFontDescription *current_desc = NULL;
+-  PangoFontset *current_fonts = NULL;
+   PangoAttrIterator *iterator;
+   gboolean first_iteration = TRUE;
+   gunichar wc;
+@@ -634,7 +790,7 @@
+           if (!next_language)
+ 	    next_language = context->language;
+ 
+-	  if (i == 0 || language != next_language)
++	  if (i == 0 || context->last_fontset.language != next_language)
+ 	    {
+ 	      static guint engine_type_id = 0;
+ 	      static guint render_type_id = 0;
+@@ -649,36 +805,21 @@
+ 					 engine_type_id, render_type_id);
+ 	    }
+ 
+-	  if (i == 0 ||
+-	      language != next_language ||
+-	      !pango_font_description_equal (current_desc, next_desc))
+-	    {
+-	      pango_font_description_free (current_desc);
+-	      current_desc = next_desc;
+-	      language = next_language;
+-	      
+-	      if (current_fonts)
+-		g_object_unref (current_fonts);
+-	      
+-	      current_fonts = pango_font_map_load_fontset (context->font_map,
+-							   context,
+-							   current_desc,
+-							   language);
+-	    }
+-	  else
+-	    pango_font_description_free (next_desc);
++	  pango_context_maybe_load_fontset (context, next_desc, next_language);
++
++	  pango_font_description_free (next_desc);
+         }
+ 
+       wc = g_utf8_get_char (pos);
+       pos = g_utf8_next_char (pos);
+       
+       analysis->lang_engine = (PangoEngineLang *)pango_map_get_engine (lang_map, wc);
+-      analysis->font = pango_fontset_get_font (current_fonts, wc);
+-      analysis->language = language;
++      analysis->font = pango_context_get_font (context, wc);
++      analysis->language = context->last_fontset.language;
+       
+       /* FIXME: handle reference counting properly on the shapers */
+       if (analysis->font)
+-	analysis->shape_engine = pango_font_find_shaper (analysis->font, language, wc);
++	analysis->shape_engine = pango_font_find_shaper (analysis->font, context->last_fontset.language, wc);
+       else
+ 	analysis->shape_engine = NULL;
+       
+@@ -690,11 +831,6 @@
+ 
+   g_assert (pos - text == start_index + length);
+ 
+-  if (current_desc)
+-    pango_font_description_free (current_desc);
+-  if (current_fonts)
+-    g_object_unref (current_fonts);
+-
+   if (iterator != cached_iter)
+     pango_attr_iterator_destroy (iterator);
+ }
+@@ -728,17 +864,9 @@
+ 			   const PangoFontDescription   *desc,
+ 			   PangoLanguage                *language)
+ {
+-  PangoFontset *current_fonts = NULL;
+-  PangoFontMetrics *metrics;
+-
+   g_return_val_if_fail (PANGO_IS_CONTEXT (context), NULL);
+   g_return_val_if_fail (desc != NULL, NULL);
+ 
+-  current_fonts = pango_font_map_load_fontset (context->font_map, context, desc, language);
+-
+-  metrics = pango_fontset_get_metrics (current_fonts);
+-  
+-  g_object_unref (current_fonts);
+-
+-  return metrics;
++  pango_context_maybe_load_fontset (context, desc, language);
++  return pango_fontset_get_metrics (context->last_fontset.current_fonts);
+ }
+Index: pango/pango-context.h
+===================================================================
+RCS file: /cvs/gnome/pango/pango/pango-context.h,v
+retrieving revision 1.16
+diff -u -r1.16 pango-context.h
+--- pango/pango-context.h	18 Nov 2001 23:23:14 -0000	1.16
++++ pango/pango-context.h	28 Feb 2003 14:57:06 -0000
+@@ -25,6 +25,7 @@
+ #include <pango/pango-font.h>
+ #include <pango/pango-fontmap.h>
+ #include <pango/pango-attributes.h>
++#include <pango/pango-glyph.h>
+ 
+ G_BEGIN_DECLS
+ 
+@@ -89,6 +90,27 @@
+                       PangoAttrList     *attrs,
+                       PangoAttrIterator *cached_iter);
+ 
++/* Deep, deep, deep under-cover.  */
++PangoFontDescription *_pango_context_font_description (PangoContext *context);
++typedef struct _PangoTrivial PangoTrivial;
++PangoTrivial *_pango_context_get_trivial (PangoContext *context,
++					  PangoFontDescription *desc,
++					  PangoLanguage *language);
++
++PangoTrivial *_pango_trivial_new (PangoFont *font,
++				  PangoLanguage *language,
++				  gunichar somechar);
++void _pango_trivial_ref (PangoTrivial *pt);
++void _pango_trivial_unref (PangoTrivial *pt);
++void _pango_trivial_get_glyph_extents (PangoTrivial *pt, guint c,
++				       PangoRectangle *ink,
++				       PangoRectangle *logical);
++void _pango_trivial_shape (const gchar *text, 
++			   gint n_chars, 
++			   PangoTrivial *pt,
++			   PangoGlyphString *glyphs);
++PangoFont *_pango_trivial_get_font (PangoTrivial *pt);
++gboolean _pango_trivial_is_text_trivial (const gchar *text, int *numbytes);
+ 
+ G_END_DECLS
+ 
+Index: pango/pango-layout.c
+===================================================================
+RCS file: /cvs/gnome/pango/pango/pango-layout.c,v
+retrieving revision 1.98
+diff -u -r1.98 pango-layout.c
+--- pango/pango-layout.c	12 Feb 2003 21:55:44 -0000	1.98
++++ pango/pango-layout.c	28 Feb 2003 14:57:07 -0000
+@@ -25,9 +25,19 @@
+ #include <pango/pango-item.h>
+ #include <pango/pango-engine.h>
+ #include <string.h>
++#include <stdlib.h>
+ 
+ #define LINE_IS_VALID(line) ((line)->layout != NULL)
+ 
++/*
++ * Is the layout effective left aligned?  Either explicitly, or by virtue
++ * of having only one line and no set width.
++ */
++#define EFF_ALIGNMENT(_layout)					\
++  ((_layout)->width == -1 && (_layout)->lines->next == NULL	\
++   ? PANGO_ALIGN_LEFT						\
++   : (_layout)->alignment)
++
+ typedef struct _Extents Extents;
+ 
+ struct _Extents
+@@ -117,7 +127,21 @@
+   guint alignment : 2;
+ 
+   guint single_paragraph : 1;
+-  
++
++  guint trivial_text : 1;
++
++  /*
++   * We cache the size of the first run.  That is a huge win, mostly because
++   * lots of layouts have only one run.
++   */
++  guint have_ink_rect : 1;
++  guint have_logical_rect : 1;
++  guint first_run_shaped : 1;
++  PangoRectangle first_ink_rect;
++  PangoRectangle first_logical_rect;
++
++  PangoTrivial *trivial;	/* Set by pango_layout_check_lines.  */
++
+   gint n_chars;		        /* Total number of characters in layout */
+   PangoLogAttr *log_attrs;	/* Logical attributes for layout's text */
+ 
+@@ -203,6 +227,8 @@
+ 
+   layout->alignment = PANGO_ALIGN_LEFT;
+   layout->justify = FALSE;
++  layout->trivial_text = FALSE;
++  layout->trivial = NULL;
+ 
+   layout->log_attrs = NULL;
+   layout->lines = NULL;
+@@ -298,7 +324,7 @@
+   if (src->font_desc)
+     layout->font_desc = pango_font_description_copy (src->font_desc);
+ 
+-  layout->text = g_strdup (src->text);
++  layout->text = g_memdup (src->text, src->length + 1);
+   layout->length = src->length;
+   layout->width = src->width;
+   layout->indent = src->indent;
+@@ -499,15 +525,18 @@
+   g_return_if_fail (layout != NULL);
+ 
+   old_attrs = layout->attrs;
++  if (attrs != old_attrs)
++    {
++      layout->attrs = attrs;
++      if (layout->attrs)
++	pango_attr_list_ref (layout->attrs);
++      pango_layout_clear_lines (layout);
+ 
+-  layout->attrs = attrs;
+-  if (layout->attrs)
+-    pango_attr_list_ref (layout->attrs);
+-  pango_layout_clear_lines (layout);
++      if (old_attrs)
++	pango_attr_list_unref (old_attrs);
+ 
+-  if (old_attrs)
+-    pango_attr_list_unref (old_attrs);
+-  layout->tab_width = -1;
++      layout->tab_width = -1;
++    }
+ }
+ 
+ /**
+@@ -538,21 +567,24 @@
+  **/
+ void
+ pango_layout_set_font_description (PangoLayout                 *layout,
+-				    const PangoFontDescription *desc)
++				   const PangoFontDescription *desc)
+ {
+   g_return_if_fail (layout != NULL);
+   g_return_if_fail (desc != NULL);
+ 
+-  if (layout->font_desc)
+-    pango_font_description_free (layout->font_desc);
++  if (layout->font_desc != desc)
++    {
++      if (layout->font_desc)
++	pango_font_description_free (layout->font_desc);
+   
+-  if (desc)
+-    layout->font_desc = pango_font_description_copy (desc);
+-  else
+-    layout->font_desc = NULL;
++      if (desc)
++	layout->font_desc = pango_font_description_copy (desc);
++      else
++	layout->font_desc = NULL;
+ 
+-  pango_layout_clear_lines (layout);
+-  layout->tab_width = -1;
++      pango_layout_clear_lines (layout);
++      layout->tab_width = -1;
++    }
+ }
+ 
+ /**
+@@ -684,10 +716,12 @@
+                                         gboolean     setting)
+ {
+   g_return_if_fail (PANGO_IS_LAYOUT (layout));
+-  
+-  layout->single_paragraph = setting;
+ 
+-  pango_layout_clear_lines (layout);
++  if (layout->single_paragraph != setting)
++    {
++      layout->single_paragraph = setting;
++      pango_layout_clear_lines (layout);
++    }
+ }
+ /**
+  * pango_layout_get_single_paragraph_mode:
+@@ -730,7 +764,10 @@
+ 
+   old_text = layout->text;
+ 
+-  if (length != 0)
++  layout->trivial_text =
++    _pango_trivial_is_text_trivial (text, &length);
++
++  if (length != 0 && !layout->trivial_text)
+     {
+       if (!g_utf8_validate (text, length, &end))
+ 	g_warning ("Invalid UTF8 string passed to pango_layout_set_text()");
+@@ -744,11 +781,11 @@
+   memcpy (layout->text, text, length);
+   layout->text[length] = '\0';
+ 
+-  layout->n_chars = g_utf8_strlen (layout->text, -1);
++  layout->n_chars = layout->trivial_text ? length : g_utf8_strlen (layout->text, -1);
+   layout->length = length;
+ 
+   pango_layout_clear_lines (layout);
+-  
++
+   if (old_text)
+     g_free (old_text);
+ }
+@@ -1783,10 +1820,12 @@
+               int              line_width,
+               int             *x_offset)
+ {
++  guint eff_alignment = EFF_ALIGNMENT (layout);
++
+   /* Alignment */
+-  if (layout->alignment == PANGO_ALIGN_RIGHT)
++  if (eff_alignment == PANGO_ALIGN_RIGHT)
+     *x_offset = layout_width - line_width;
+-  else if (layout->alignment == PANGO_ALIGN_CENTER)
++  else if (eff_alignment == PANGO_ALIGN_CENTER)
+     *x_offset = (layout_width - line_width) / 2;
+   else
+     *x_offset = 0;
+@@ -1886,14 +1925,14 @@
+    * x_offsets if we are computing the ink_rect or individual line extents.
+    */
+   width = layout->width;
+-  if (width == -1 && layout->alignment != PANGO_ALIGN_LEFT && (ink_rect || line_extents))
++  if (width == -1 && EFF_ALIGNMENT (layout) != PANGO_ALIGN_LEFT && (ink_rect || line_extents))
+     {
+       PangoRectangle overall_logical;
+-      
++
+       pango_layout_get_extents (layout, NULL, &overall_logical);
+       width = overall_logical.width;
+     }
+-  
++
+   line_list = layout->lines;
+   while (line_list)
+     {
+@@ -2123,6 +2162,12 @@
+       g_free (layout->log_attrs);
+       layout->log_attrs = NULL;
+     }
++
++  if (layout->trivial)
++    {
++      _pango_trivial_unref (layout->trivial);
++      layout->trivial = NULL;
++    }
+ }
+ 
+ 
+@@ -2279,8 +2324,7 @@
+       items = pango_itemize (layout->context, " ", 0, 1, tmp_attrs, NULL);
+ 
+       pango_attr_iterator_destroy (iter);
+-      if (layout_attrs != layout->attrs)
+-	pango_attr_list_unref (layout_attrs);
++      pango_attr_list_unref (layout_attrs);
+       pango_attr_list_unref (tmp_attrs);
+       
+       item = items->data;
+@@ -2737,7 +2781,8 @@
+       switch (result)
+ 	{
+ 	case BREAK_ALL_FIT:
+-	  if (can_break_in (layout, state->start_offset, old_num_chars, first_item_in_line))
++	  if (state->items->next &&
++	      can_break_in (layout, state->start_offset, old_num_chars, first_item_in_line))
+ 	    {
+ 	      have_break = TRUE;
+ 	      break_remaining_width = old_remaining_width;
+@@ -2841,9 +2886,17 @@
+ pango_layout_get_effective_attributes (PangoLayout *layout)
+ {
+   PangoAttrList *attrs;
+-  
+- if (layout->attrs)
+-   attrs = pango_attr_list_copy (layout->attrs);
++
++  if (layout->attrs)
++    {
++      if (!layout->font_desc)
++	{
++	  attrs = pango_attr_list_copy_shallow (layout->attrs);
++	  return attrs;
++	}
++
++      attrs = pango_attr_list_copy (layout->attrs);
++    }
+   else
+     attrs = pango_attr_list_new ();
+ 
+@@ -2918,6 +2971,49 @@
+ }
+ 
+ static void
++pango_layout_check_lines_trivial (PangoLayout *layout,
++				  PangoAttrIterator *iter)
++{
++  PangoContext *context = layout->context;
++  PangoLayoutLine *the_line;
++  PangoLayoutRun *the_run;
++  PangoItem *item;
++  PangoGlyphString *glyphs;
++  PangoLanguage *language;
++  PangoFontDescription *desc;
++  PangoTrivial *pt;
++
++  desc = _pango_context_font_description (context);
++  pango_attr_iterator_get_font (iter, desc, &language, NULL);
++  pt = layout->trivial = _pango_context_get_trivial (context, desc, language);
++  pango_font_description_free (desc);
++
++  if (!pt)
++    return;
++
++  item = pango_item_new ();
++  item->offset = 0;
++  item->length = layout->length;
++  item->num_chars = layout->n_chars;
++  memset (&item->analysis, 0, sizeof (PangoAnalysis));
++  item->analysis.font = g_object_ref (_pango_trivial_get_font (pt));
++
++  glyphs = pango_glyph_string_new ();
++  _pango_trivial_shape (layout->text, layout->n_chars, pt, glyphs);
++
++  the_run = g_new (PangoLayoutRun, 1);
++  the_run->item = item;
++  the_run->glyphs = glyphs;
++
++  the_line = pango_layout_line_new (layout);
++  the_line->start_index = 0;
++  the_line->length = layout->length;
++  the_line->runs = g_slist_prepend (the_line->runs, the_run);
++
++  layout->lines = g_slist_prepend (layout->lines, the_line);
++}
++
++static void
+ pango_layout_check_lines (PangoLayout *layout)
+ {
+   const char *start;
+@@ -2926,7 +3022,9 @@
+   PangoAttrList *attrs;
+   PangoAttrList *no_shape_attrs;
+   PangoAttrIterator *iter;
+-  
++  static int do_trivial = -1;
++  gboolean is_trivial;
++
+   if (layout->lines)
+     return;
+ 
+@@ -2938,10 +3036,28 @@
+   if (!layout->text)
+     pango_layout_set_text (layout, NULL, 0);
+ 
++  if (do_trivial == -1)
++    {
++      const char *val = g_getenv ("PANGO_TRIVIAL");
++
++      do_trivial = (val && atoi (val) ? 1 : 0);
++    }
++
++  /* FIXME: conditions on attributes too?  */
++  is_trivial = (do_trivial &&
++		layout->trivial_text &&
++		layout->width == -1);
++
+   attrs = pango_layout_get_effective_attributes (layout);
+   no_shape_attrs = filter_no_shape_attributes (attrs);
+   iter = pango_attr_list_get_iterator (attrs);
+-  
++  if (is_trivial)
++    {
++      pango_layout_check_lines_trivial (layout, iter);
++      if (layout->trivial)
++	goto apply_attributes;
++    }
++
+   layout->log_attrs = g_new (PangoLogAttr, layout->n_chars + 1);
+   
+   start_offset = 0;
+@@ -2954,7 +3070,7 @@
+       int delimiter_index, next_para_index;
+       ParaBreakState state;
+ 
+-      if (layout->single_paragraph)
++      if (layout->single_paragraph || layout->trivial_text)
+         {
+           delimiter_index = layout->length;
+           next_para_index = layout->length;
+@@ -2989,8 +3105,8 @@
+ 				   iter);
+ 
+       get_items_log_attrs (start, state.items,
+-                           layout->log_attrs + start_offset,
+-                           delim_len);
++			   layout->log_attrs + start_offset,
++			   delim_len);
+ 
+       if (state.items)
+ 	{
+@@ -3022,9 +3138,9 @@
+     }
+   while (!done);
+ 
++ apply_attributes:
+   pango_attr_iterator_destroy (iter);
+   pango_attr_list_unref (attrs);
+-
+   if (no_shape_attrs)
+     {
+       apply_no_shape_attributes (layout, no_shape_attrs);
+@@ -3032,6 +3148,7 @@
+     }
+ 
+   layout->lines = g_slist_reverse (layout->lines);
++  layout->have_ink_rect = layout->have_logical_rect = FALSE;
+ }
+ 
+ /**
+@@ -3347,7 +3464,7 @@
+   base_dir = pango_context_get_base_dir (line->layout->context);
+ 
+   width = line->layout->width;
+-  if (width == -1 && line->layout->alignment != PANGO_ALIGN_LEFT)
++  if (width == -1 && EFF_ALIGNMENT (line->layout) != PANGO_ALIGN_LEFT)
+     {
+       pango_layout_get_extents (line->layout, NULL, &logical_rect);
+       width = logical_rect.width;
+@@ -3360,6 +3477,10 @@
+   pango_layout_line_get_extents (line, NULL, &logical_rect);
+ 
+   /* FIXME it seems to me that width can be -1 here? */
++  /*
++   * Yes, but only when the effective alignment is PANGO_ALIGN_LEFT, and
++   * then get_x_offset will not use the width. -- MW
++   */
+   get_x_offset (line->layout, line, width, logical_rect.width, &x_offset);
+ 
+   line_start_index = line->start_index;
+@@ -3538,8 +3659,68 @@
+     }
+ }
+ 
++/* Derived from pango_glyph_string_extents_range */
++static void
++trivial_glyph_string_extents (const gchar *trivial_text,
++			      PangoTrivial *pt,
++			      PangoGlyphString *glyphs,
++			      PangoFont *font,
++			      PangoRectangle *ink_rect,
++			      PangoRectangle *logical_rect)
++{
++  int x_pos = 0;
++  int i;
++  PangoRectangle glyph_ink, *pink = ink_rect ? &glyph_ink : NULL;
++  PangoRectangle glyph_logical, *plogical = logical_rect ? &glyph_logical : NULL;
++
++  _pango_trivial_get_glyph_extents (pt, trivial_text[0],
++				    ink_rect, logical_rect);
++  if (logical_rect)
++    {
++      PangoGlyphGeometry *geometry = &glyphs->glyphs[0].geometry;
++
++      logical_rect->x = 0;
++      logical_rect->width = geometry->width;
++    }
++
++  for (i = 1; i < glyphs->num_glyphs; i++)
++    {
++      PangoGlyphGeometry *geometry = &glyphs->glyphs[i].geometry;
++      int new_pos;
++
++      _pango_trivial_get_glyph_extents (pt, trivial_text[i], pink, plogical);
++
++      if (ink_rect)
++	{
++	  new_pos = MIN (ink_rect->x, x_pos + glyph_ink.x + geometry->x_offset);
++	  ink_rect->width = MAX (ink_rect->x + ink_rect->width,
++				 x_pos + glyph_ink.x + glyph_ink.width + geometry->x_offset) - new_pos;
++	  ink_rect->x = new_pos;
++
++	  new_pos = MIN (ink_rect->y, glyph_ink.y + geometry->y_offset);
++	  ink_rect->height = MAX (ink_rect->y + ink_rect->height,
++				  glyph_ink.y + glyph_ink.height + geometry->y_offset) - new_pos;
++	  ink_rect->y = new_pos;
++	}
++
++      if (logical_rect)
++	{
++	  logical_rect->width += geometry->width;
++
++	  new_pos = MIN (logical_rect->y, glyph_logical.y);
++	  logical_rect->height = MAX (logical_rect->y + logical_rect->height,
++				      glyph_logical.y + glyph_logical.height) - new_pos;
++	  logical_rect->y = new_pos;
++	}
++
++      x_pos += geometry->width;
++    }
++}
++
+ static void
+ pango_layout_run_get_extents (PangoLayoutRun *run,
++			      const gchar    *trivial_text,
++			      PangoTrivial   *pt,
+                               gboolean       *shape_setp,
+                               PangoRectangle *run_ink,
+                               PangoRectangle *run_logical)
+@@ -3563,6 +3744,11 @@
+   if (shape_set)
+     imposed_extents (run->item->num_chars, &shape_ink, &shape_logical,
+ 		     need_ink ? &tmp_ink : NULL, run_logical);
++  else if (pt)
++    trivial_glyph_string_extents (trivial_text, pt,
++				  run->glyphs, run->item->analysis.font,
++				  need_ink ? &tmp_ink : NULL,
++				  run_logical);
+   else
+     pango_glyph_string_extents (run->glyphs, run->item->analysis.font,
+                                 need_ink ? &tmp_ink : NULL,
+@@ -3608,6 +3794,29 @@
+     }
+ }
+ 
++static inline void
++ensure_first_run_rects (PangoLayout *layout, gboolean need_ink, gboolean need_logical)
++{
++  if (layout->have_ink_rect) need_ink = FALSE;
++  if (layout->have_logical_rect) need_logical = FALSE;
++
++  if (need_ink || need_logical)
++    {
++      PangoLayoutLine *first_line = layout->lines->data;
++      PangoLayoutRun *run = first_line->runs->data;
++      gboolean shape_set;
++
++      pango_layout_run_get_extents (run,
++				    layout->text,
++				    layout->trivial,
++				    &shape_set,
++				    need_ink ? (layout->have_ink_rect = TRUE, &layout->first_ink_rect) : NULL,
++				    need_logical ? (layout->have_logical_rect = TRUE, &layout->first_logical_rect) : NULL);
++      layout->first_run_shaped = shape_set;
++    }
++}
++
++
+ /**
+  * pango_layout_line_get_extents:
+  * @line:     a #PangoLayoutLine
+@@ -3627,7 +3836,9 @@
+ {
+   GSList *tmp_list;
+   int x_pos = 0;
+-  
++  PangoLayout *layout;
++  gboolean is_first_run;
++
+   g_return_if_fail (LINE_IS_VALID (line));
+ 
+   if (!LINE_IS_VALID (line))
+@@ -3648,8 +3859,12 @@
+       logical_rect->width = 0;
+       logical_rect->height = 0;
+     }
+-  
++
++  layout = line->layout;
+   tmp_list = line->runs;
++
++  is_first_run = line == layout->lines->data;
++
+   while (tmp_list)
+     {
+       PangoLayoutRun *run = tmp_list->data;
+@@ -3657,9 +3872,18 @@
+       PangoRectangle run_ink;
+       PangoRectangle run_logical;
+ 
+-      pango_layout_run_get_extents (run, NULL,
+-                                    ink_rect ? &run_ink : NULL,
+-                                    &run_logical);
++      if (is_first_run)
++	{
++	  ensure_first_run_rects (layout, ink_rect != NULL, TRUE);
++	  if (ink_rect) run_ink = layout->first_ink_rect;
++	  run_logical = layout->first_logical_rect;
++	  is_first_run = FALSE;
++	}
++      else
++	pango_layout_run_get_extents (run, NULL, NULL,
++				      NULL,
++				      ink_rect ? &run_ink : NULL,
++				      &run_logical);
+       
+       if (ink_rect)
+ 	{
+@@ -3977,28 +4201,35 @@
+ update_run (PangoLayoutIter *iter,
+ 	    int              run_start_index)
+ {
+-  int old_run_width;
+   Extents *line_ext;
++  gboolean is_first_run;
+ 
+   line_ext = (Extents*)iter->line_extents_link->data;
+-  
+-  /* Note that in iter_new() the old_run_width is garbage,
+-   * but we don't use it since we're on the first run of
+-   * a line.
+-   */
+-  old_run_width = iter->run_logical_rect.width;
+ 
+   if (iter->run_list_link == iter->line->runs)
+-    iter->run_x = line_ext->logical_rect.x;
++    {
++      iter->run_x = line_ext->logical_rect.x;
++      is_first_run = (iter->line == iter->layout->lines->data);
++    }
+   else
+-    iter->run_x += old_run_width;
++    {
++      int old_run_width = iter->run_logical_rect.width;
++      iter->run_x += old_run_width;
++      is_first_run = FALSE;
++    }
+   
+   if (iter->run)
+     {
+-      pango_layout_run_get_extents (iter->run,
+-                                    &iter->run_is_shaped,
+-                                    NULL,
+-                                    &iter->run_logical_rect);
++      if (is_first_run)
++	{
++	  iter->run_logical_rect = iter->layout->first_logical_rect;
++	  iter->run_is_shaped = iter->layout->first_run_shaped;
++	}
++      else
++	pango_layout_run_get_extents (iter->run, NULL, NULL,
++				      &iter->run_is_shaped,
++				      NULL,
++				      &iter->run_logical_rect);
+ 
+       /* Fix coordinates of the run extents */
+       iter->run_logical_rect.x += iter->run_x;
+@@ -4070,7 +4301,7 @@
+   g_object_ref (iter->layout);
+ 
+   pango_layout_check_lines (layout);
+-  
++
+   iter->line_list_link = layout->lines;
+   iter->line = iter->line_list_link->data;
+   pango_layout_line_ref (iter->line);
+@@ -4078,7 +4309,10 @@
+   iter->run_list_link = iter->line->runs;
+ 
+   if (iter->run_list_link)
+-    iter->run = iter->run_list_link->data;
++    {
++      iter->run = iter->run_list_link->data;
++      ensure_first_run_rects (layout, FALSE, TRUE);
++    }
+   else
+     iter->run = NULL;
+ 
+@@ -4533,7 +4767,8 @@
+     {
+       if (iter->run)
+         {
+-          pango_layout_run_get_extents (iter->run, NULL, ink_rect, NULL);
++          pango_layout_run_get_extents (iter->run, NULL, NULL,
++					NULL, ink_rect, NULL);
+           offset_y (iter, &ink_rect->y);
+           ink_rect->x += iter->run_x;
+         }
+Index: pango/pango-markup.c
+===================================================================
+RCS file: /cvs/gnome/pango/pango/pango-markup.c,v
+retrieving revision 1.16
+diff -u -r1.16 pango-markup.c
+--- pango/pango-markup.c	2 Jul 2002 17:15:22 -0000	1.16
++++ pango/pango-markup.c	28 Feb 2003 14:57:07 -0000
+@@ -601,7 +601,7 @@
+   else
+     md->attr_list = NULL;
+ 
+-  md->text = g_string_new ("");
++  md->text = g_string_new (NULL);
+   
+   if (accel_char)
+     *accel_char = 0;
+Index: pango/pangox.c
+===================================================================
+RCS file: /cvs/gnome/pango/pango/pangox.c,v
+retrieving revision 1.77
+diff -u -r1.77 pangox.c
+--- pango/pangox.c	9 Dec 2002 04:01:21 -0000	1.77
++++ pango/pangox.c	28 Feb 2003 14:57:07 -0000
+@@ -151,6 +151,8 @@
+    
+   PangoXLigatureInfo *ligs;
+   int n_ligs;
++
++  guint16 *widths;
+ };
+ 
+ struct _PangoXMetricsInfo
+@@ -252,6 +254,7 @@
+ {
+   PangoXFont *xfont = (PangoXFont *)font;
+   PangoXFontCache *cache;
++  int min_index, max_index;
+ 
+   cache = pango_x_font_map_get_font_cache (xfont->fontmap);
+   
+@@ -268,6 +271,26 @@
+   info->range_byte1 = info->font_struct->max_byte1 - info->font_struct->min_byte1 + 1;
+   info->range_byte2 = info->font_struct->max_char_or_byte2 - info->font_struct->min_char_or_byte2 + 1;
+   font_struct_get_ligatures (xfont->fontmap, xfont->display, info->font_struct, info);
++
++  min_index = info->font_struct->min_byte1 * 256 + info->font_struct->min_char_or_byte2;
++  max_index = info->font_struct->max_byte1 * 256 + info->font_struct->max_char_or_byte2;
++
++  if (min_index <= 127 && max_index >= 32)
++    {
++      int i;
++
++      info->widths = g_new (guint16, 128 - 32);
++      for (i = 32; i < 128; i++)
++	if (i >= min_index && i <= max_index)
++	  {
++	    XChar2b xc2;
++	    xc2.byte1 = i / 256;
++	    xc2.byte2 = i % 256;
++	    info->widths[i - 32] = XTextWidth16 (info->font_struct, &xc2, 1);
++	  }
++	else
++	  info->widths[i - 32] = 0;
++    }
+ }
+ 
+ static inline XFontStruct *
+@@ -455,6 +478,19 @@
+ 
+   return (PangoFont *)result;
+ }
++
++
++#define FLUSH						\
++  G_STMT_START {					\
++    if (charcount)					\
++      {							\
++	XDrawString16 (display, d, gc,			\
++		       glyph_x0, glyph_y0,		\
++		       xcharbuffer, charcount);		\
++	charcount = 0;					\
++      }							\
++  } G_STMT_END
++
+  
+ /**
+  * pango_x_render:
+@@ -477,15 +513,19 @@
+ 		 int                x, 
+ 		 int                y)
+ {
+-  /* Slow initial implementation. For speed, it should really
+-   * collect the characters into runs, and draw multiple
+-   * characters with each XDrawString16 call.
+-   */
+   Font old_fid = None;
+   XFontStruct *fs;
+   int i;
+   int x_off = 0;
+ 
++  /*
++   * We collect the characters in this buffer as long as the font does not
++   * change.  At that time, or when the buffer runs full, or at the end,
++   * then we empty the buffer.
++   */
++  XChar2b xcharbuffer[1000];
++  int glyph_x0 = 0, expected_x = 0, glyph_y0 = 0, charcount = 0;
++
+   g_return_if_fail (display != NULL);
+   g_return_if_fail (glyphs != NULL);
+   
+@@ -505,7 +545,7 @@
+ 	    glyph_x >= -16384 && glyph_x <= 32767 &&
+ 	    glyph_y >= -16384 && glyph_y <= 32767))
+ 	goto next_glyph;
+-	      
++
+       if (glyph & PANGO_X_UNKNOWN_FLAG)
+         {
+ 	  PangoFontMetrics *metrics = pango_font_get_metrics (font,
+@@ -515,7 +555,9 @@
+ 	  int stroke_thick;
+ 
+           gunichar wc;
+-          
++
++	  FLUSH;
++
+           x1 = glyph_x;
+           y1 = glyph_y - PANGO_PIXELS (metrics->ascent);
+           x2 = x1 + PANGO_PIXELS (glyphs->glyphs[i].geometry.width);
+@@ -624,35 +666,48 @@
+ 	  guint16 subfont_index = PANGO_X_GLYPH_SUBFONT (glyph);
+ 	  PangoXSubfontInfo *subfont;
+       
+-	  XChar2b c;
+-	  
+ 	  subfont = pango_x_find_subfont (font, subfont_index);
+ 	  if (subfont)
+ 	    {
+-	      c.byte1 = index / 256;
+-	      c.byte2 = index % 256;
+-	      
+ 	      fs = pango_x_get_font_struct (font, subfont);
+ 	      if (!fs)
+ 		continue;
+ 	      
+ 	      if (fs->fid != old_fid)
+ 		{
++		  FLUSH;
+ 		  XSetFont (display, gc, fs->fid);
+ 		  old_fid = fs->fid;
+ 		}
+-	      
+-	      XDrawString16 (display, d, gc,
+-			     glyph_x, glyph_y,
+-			     &c, 1);
++
++	      if (charcount == G_N_ELEMENTS (xcharbuffer) ||
++		  (charcount > 0 && (glyph_y != glyph_y0 ||
++				     glyph_x != expected_x)))
++		FLUSH;
++
++	      if (charcount == 0)
++		glyph_x0 = glyph_x, glyph_y0 = glyph_y;
++	      xcharbuffer[charcount].byte1 = index / 256;
++	      xcharbuffer[charcount].byte2 = index % 256;
++
++	      if (subfont->widths && index >= 32 && index < 128)
++		expected_x = glyph_x + subfont->widths[index - 32];
++	      else
++		expected_x =
++		  glyph_x + XTextWidth16 (fs, &xcharbuffer[charcount], 1);
++
++	      charcount++;
+ 	    }
+ 	}
+ 
+     next_glyph:
+       x_off += glyphs->glyphs[i].geometry.width;
+     }
++  FLUSH;
+ }
+ 
++#undef FLUSH
++
+ static void
+ pango_x_font_get_glyph_extents  (PangoFont      *font,
+ 				 PangoGlyph      glyph,
+@@ -1112,6 +1167,7 @@
+   info->n_ligs = 0;
+   info->ligs = 0;
+   info->ligature_sets = 0;
++  info->widths = NULL;
+ 
+   xfont->n_subfonts++;
+   
+Index: pango/querymodules.c
+===================================================================
+RCS file: /cvs/gnome/pango/pango/querymodules.c,v
+retrieving revision 1.17
+diff -u -r1.17 querymodules.c
+--- pango/querymodules.c	6 Dec 2002 23:17:41 -0000	1.17
++++ pango/querymodules.c	28 Feb 2003 14:57:08 -0000
+@@ -59,7 +59,7 @@
+ static char *
+ escape_string (const char *str)
+ {
+-  GString *result = g_string_new ("");
++  GString *result = g_string_new (NULL);
+ 
+   while (TRUE)
+     {
+Index: pango/opentype/pango-ot-info.c
+===================================================================
+RCS file: /cvs/gnome/pango/pango/opentype/pango-ot-info.c,v
+retrieving revision 1.6
+diff -u -r1.6 pango-ot-info.c
+--- pango/opentype/pango-ot-info.c	11 Jan 2003 00:16:26 -0000	1.6
++++ pango/opentype/pango-ot-info.c	28 Feb 2003 14:57:08 -0000
+@@ -189,7 +189,8 @@
+   FT_UInt glyph;
+   int i, j;
+   
+-  if (info->face->charmap->encoding != ft_encoding_unicode)
++  if (!info->face->charmap ||
++      info->face->charmap->encoding != ft_encoding_unicode)
+     return;
+ 
+   glyph_infos = g_array_new (FALSE, FALSE, sizeof (GlyphInfo));
+--- /dev/null	Fri Feb 28 05:04:05 2003
++++ pango/trivial.c	Wed Feb 26 09:42:43 2003
+@@ -0,0 +1,176 @@
++/* Pango
++ * trivial.c:
++ *
++ * Copyright (C) 2003 Morten Welinder
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Library General Public
++ * License as published by the Free Software Foundation; either
++ * version 2 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
++ * Library General Public License for more details.
++ *
++ * You should have received a copy of the GNU Library General Public
++ * License along with this library; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 02111-1307, USA.
++ */
++
++#include "pango-context.h"
++#include "pango-font.h"
++#include "pango-item.h"
++
++#define PANGO_TRIVIAL_FIRST ((unsigned char)('!'))
++#define PANGO_TRIVIAL_LAST 126
++#define PANGO_TRIVIAL_COUNT (PANGO_TRIVIAL_LAST - PANGO_TRIVIAL_FIRST + 1)
++
++struct _PangoTrivial
++{
++  int ref_count;
++
++  PangoFont *font;
++
++  /* Glyphs for the trivial characters.  */
++  PangoGlyph glyphs[PANGO_TRIVIAL_COUNT];
++
++  /* Extents of the glyphs.  */
++  PangoRectangle ink_extents[PANGO_TRIVIAL_COUNT];
++  PangoRectangle logical_extents[PANGO_TRIVIAL_COUNT];
++};
++
++
++PangoTrivial *
++_pango_trivial_new (PangoFont *font,
++		   PangoLanguage *language,
++		   gunichar somechar)
++{
++  PangoTrivial *pt = g_new0 (PangoTrivial, 1);
++  guchar test_string[2 * PANGO_TRIVIAL_COUNT + 1];
++  guchar c, *p = test_string;
++  int i;
++  PangoAnalysis analysis;
++  PangoGlyphString *glyphs = pango_glyph_string_new ();
++
++  pt->ref_count = 1;
++
++  memset (&analysis, 0, sizeof (analysis));
++  analysis.font = font;
++  analysis.language = language;
++  analysis.shape_engine =
++    pango_font_find_shaper (analysis.font, language, somechar);
++
++  for (c = PANGO_TRIVIAL_FIRST; c <= PANGO_TRIVIAL_LAST; c++)
++    {
++      *p++ = c;
++      *p++ = '$';
++    }
++  *p = 0;
++
++  pango_shape (test_string, p - test_string, &analysis, glyphs);
++  if (glyphs->num_glyphs != p - test_string)
++    {
++      g_warning ("Apparently not so trivial; got %d vs %d glyphs",
++		 glyphs->num_glyphs, p - test_string);
++      goto error;
++    }
++
++  for (i = 0, c = 0; c < PANGO_TRIVIAL_COUNT; c++, i += 2)
++    {
++      if (i >= glyphs->num_glyphs) i = 0;
++      pt->glyphs[c] = glyphs->glyphs[i].glyph;
++
++      pango_font_get_glyph_extents (font,
++				    pt->glyphs[c],
++				    &pt->ink_extents[c],
++				    &pt->logical_extents[c]);
++    }
++
++  g_object_ref (pt->font = font);
++  pango_glyph_string_free (glyphs);
++  return pt;
++
++ error:
++  pango_glyph_string_free (glyphs);
++  g_free (pt);
++  return NULL;
++}
++
++void
++_pango_trivial_ref (PangoTrivial *pt)
++{
++  pt->ref_count++;
++}
++
++void
++_pango_trivial_unref (PangoTrivial *pt)
++{
++  if (pt->ref_count-- > 1)
++    return;
++
++  g_object_unref (pt->font);
++  g_free (pt);
++}
++
++void
++_pango_trivial_get_glyph_extents (PangoTrivial *pt, guint c,
++				 PangoRectangle *ink_rect,
++				 PangoRectangle *logical_rect)
++{
++  c -= PANGO_TRIVIAL_FIRST;
++
++  if (ink_rect)
++    *ink_rect = pt->ink_extents[c];
++
++  if (logical_rect)
++    *logical_rect = pt->logical_extents[c];
++}
++
++void
++_pango_trivial_shape (const gchar *text, 
++		     gint n_chars, 
++		     PangoTrivial *pt,
++		     PangoGlyphString *glyphs)
++{
++  int i;
++
++  pango_glyph_string_set_size (glyphs, n_chars);
++  for (i = 0; i < n_chars; i++)
++    {
++      guint c = text[i] - PANGO_TRIVIAL_FIRST;
++
++      glyphs->glyphs[i].glyph = pt->glyphs[c];
++      glyphs->glyphs[i].geometry.x_offset = 0;
++      glyphs->glyphs[i].geometry.y_offset = 0;
++      glyphs->glyphs[i].geometry.width = pt->logical_extents[c].width;
++      glyphs->glyphs[i].attr.is_cluster_start = 1;
++      glyphs->log_clusters[i] = i;
++    }
++}
++
++PangoFont *
++_pango_trivial_get_font (PangoTrivial *pt)
++{
++  return pt->font;
++}
++
++/* A trivial_text is non-empty, ASCII-only, and white-space free.  */
++gboolean
++_pango_trivial_is_text_trivial (const gchar *text, int *numbytes)
++{
++  const gchar *text0 = text;
++  const gchar *end = (*numbytes >= 0) ? text0 + *numbytes : NULL;
++
++  while (*text && text != end)
++    {
++      if (*text <= ' ' || *text >= 127)
++	return FALSE;
++
++      text++;
++    }
++
++  *numbytes = text - text0;
++  return (*numbytes > 0);
++}

@@ -1,0 +1,10 @@
+OBJ = gobject-2.2s.lib gmodule-2.2s.lib glib-2.2s.lib  \
+		gdk-win32-2.2s.lib gdk_pixbuf-2.2s.lib \
+		pango-1.2s.lib pangowin32-1.2s.lib \
+		gtk-win32-2.2s.lib gettext.lib dirent.lib
+LIBS = iconv.lib
+SYSLIB = gdi32.lib shell32.lib user32.lib advapi32.lib imm32.lib ole32.lib comdlg32.lib winmm.lib ws2_32.lib
+
+all:
+	link /LTCG $(OBJ) /DLL /OUT:minigtk.dll /SUBSYSTEM:Windows $(LIBS) $(SYSLIB) /DEF:minigtk.def
+	ls -l minigtk.dll

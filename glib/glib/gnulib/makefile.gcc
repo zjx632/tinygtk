@@ -1,0 +1,22 @@
+!IFDEF DEBUG
+CRT=-MDd
+!ELSE
+CRT=-MD
+!ENDIF
+CC=gcc
+
+CFLAGS = -I ..\.. -DHAVE_CONFIG_H -DHAVE_LONG_LONG_FORMAT
+# -DHAVE_INT64_AND_I64
+
+OBJECTS = \
+	asnprintf.o \
+	printf.o \
+	printf-args.o \
+	printf-parse.o \
+	vasnprintf.o
+
+gnulib.lib : $(OBJECTS)
+	lib -out:gnulib.lib $(OBJECTS)
+
+.c.o:
+	$(CC) $(CRT) $(CFLAGS) -Os -mcpu=i686 -s -mpreferred-stack-boundary=2 -c $<

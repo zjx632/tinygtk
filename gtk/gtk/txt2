@@ -1,0 +1,48 @@
+gtkbbox.c:  gtk_widget_child_notify (child, "secondary");
+gtkbox.c:  gtk_widget_freeze_child_notify (child);
+gtkbox.c:  gtk_widget_child_notify (child, "expand");
+gtkbox.c:  gtk_widget_child_notify (child, "fill");
+gtkbox.c:  gtk_widget_child_notify (child, "padding");
+gtkbox.c:  gtk_widget_child_notify (child, "position");
+gtkbox.c:  gtk_widget_thaw_child_notify (child);
+gtkbox.c:  gtk_widget_freeze_child_notify (child);
+gtkbox.c:  gtk_widget_child_notify (child, "expand");
+gtkbox.c:  gtk_widget_child_notify (child, "fill");
+gtkbox.c:  gtk_widget_child_notify (child, "padding");
+gtkbox.c:  gtk_widget_child_notify (child, "position");
+gtkbox.c:  gtk_widget_thaw_child_notify (child);
+gtkbox.c:  gtk_widget_child_notify (child, "position");
+gtkbox.c:  gtk_widget_freeze_child_notify (child);
+gtkbox.c:      gtk_widget_child_notify (child, "expand");
+gtkbox.c:      gtk_widget_child_notify (child, "fill");
+gtkbox.c:      gtk_widget_child_notify (child, "padding");
+gtkbox.c:  gtk_widget_thaw_child_notify (child);
+gtkcontainer.c:  gtk_widget_freeze_child_notify (widget);
+gtkcontainer.c:  gtk_widget_thaw_child_notify (widget);
+gtkfixed.c:  gtk_widget_freeze_child_notify (widget);
+gtkfixed.c:      gtk_widget_child_notify (widget, "x");
+gtkfixed.c:      gtk_widget_child_notify (widget, "y");
+gtkfixed.c:  gtk_widget_thaw_child_notify (widget);
+gtklayout.c:  gtk_widget_freeze_child_notify (widget);
+gtklayout.c:      gtk_widget_child_notify (widget, "x");
+gtklayout.c:      gtk_widget_child_notify (widget, "y");
+gtklayout.c:  gtk_widget_thaw_child_notify (widget);
+gtknotebook.c:  gtk_widget_freeze_child_notify (child);
+gtknotebook.c:  gtk_widget_child_notify (child, "position");
+gtknotebook.c:  gtk_widget_thaw_child_notify (child);
+gtknotebook.c:  gtk_widget_freeze_child_notify (child);
+gtknotebook.c:  gtk_widget_child_notify (child, "position");
+gtknotebook.c:  gtk_widget_thaw_child_notify (child);
+gtknotebook.c:  gtk_widget_freeze_child_notify (child);
+gtknotebook.c:  gtk_widget_child_notify (child, "position");
+gtknotebook.c:  gtk_widget_thaw_child_notify (child);
+gtkwidget.c:    g_signal_new ("child_notify",
+gtkwidget.c:		   G_STRUCT_OFFSET (GtkWidgetClass, child_notify),
+gtkwidget.c: * gtk_widget_freeze_child_notify:
+gtkwidget.c: * queued until gtk_widget_thaw_child_notify() is called on @widget. 
+gtkwidget.c:gtk_widget_freeze_child_notify (GtkWidget *widget)
+gtkwidget.c: * gtk_widget_child_notify:
+gtkwidget.c:gtk_widget_child_notify (GtkWidget    *widget,
+gtkwidget.c: * gtk_widget_thaw_child_notify:
+gtkwidget.c: * Reverts the effect of a previous call to gtk_widget_freeze_child_notify().
+gtkwidget.c:gtk_widget_thaw_child_notify (GtkWidget *widget)

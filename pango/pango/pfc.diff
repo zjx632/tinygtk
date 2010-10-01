@@ -1,0 +1,313 @@
+--- pango/pango-context.c	12 Feb 2003 22:16:11 -0000	1.50
++++ pango/pango-context.c	28 Feb 2003 14:57:06 -0000
+@@ -36,6 +36,15 @@
+   PangoFontDescription *font_desc;
+ 
+   PangoFontMap *font_map;
++
++  struct {
++    PangoFontDescription *current_desc;
++    PangoFontset *current_fonts;
++    PangoLanguage *language;
++    PangoFont *font;
++  } last_fontset;
++
++  GHashTable *trivial_cache;
+ };
+ 
+ struct _PangoContextClass
+@@ -44,6 +53,138 @@
+   
+ };
+ 
++static void
++invalidate_last_fontset_cache (PangoContext *context)
++{
++  if (context->last_fontset.current_desc)
++    {
++      pango_font_description_free (context->last_fontset.current_desc);
++      context->last_fontset.current_desc = NULL;
++    }
++  if (context->last_fontset.current_fonts)
++    {
++      g_object_unref (context->last_fontset.current_fonts);
++      context->last_fontset.current_fonts = NULL;
++    }
++  context->last_fontset.language = NULL;
++  if (context->last_fontset.font)
++    {
++      g_object_unref (context->last_fontset.font);
++      context->last_fontset.font = NULL;
++    }
++}
++
++static void
++pango_context_maybe_load_fontset (PangoContext *context,
++				  const PangoFontDescription *next_desc,
++				  PangoLanguage *next_language)
++{
++  if (context->last_fontset.current_desc == NULL ||
++      context->last_fontset.language != next_language ||
++      !pango_font_description_equal (context->last_fontset.current_desc, next_desc))
++    {
++      invalidate_last_fontset_cache (context);
++      context->last_fontset.current_desc = pango_font_description_copy (next_desc);
++      context->last_fontset.language = next_language;
++      context->last_fontset.current_fonts =
++	pango_font_map_load_fontset (context->font_map,
++				     context,
++				     context->last_fontset.current_desc,
++				     context->last_fontset.language);
++    }
++}
++
++static PangoFont *
++pango_context_get_font (PangoContext *context,
++			gunichar wc)
++{
++  return pango_fontset_get_font (context->last_fontset.current_fonts, wc);
++}
++
++PangoFontDescription *
++_pango_context_font_description (PangoContext *context)
++{
++  return pango_font_description_copy_static (context->font_desc);
++}
++
++typedef struct _PangoTrivialCache {
++  PangoFontDescription *desc;
++  PangoLanguage *language;
++} PangoTrivialCache;
++
++static guint
++ptc_hash (const PangoTrivialCache *ptc)
++{
++  return (pango_font_description_hash (ptc->desc) ^
++	  g_str_hash (pango_language_to_string (ptc->language)));
++}
++
++static gboolean
++ptc_equal (const PangoTrivialCache *a, const PangoTrivialCache *b)
++{
++  if (a->language != b->language &&
++      strcmp (pango_language_to_string (a->language),
++	      pango_language_to_string (b->language)))
++      return FALSE;
++
++  return pango_font_description_equal (a->desc, b->desc);
++}
++
++static void
++ptc_destroy (PangoTrivialCache *ptc)
++{
++  pango_font_description_free (ptc->desc);
++  /* Nothing for ptc->language */
++  g_free (ptc);
++}
++
++PangoTrivial *
++_pango_context_get_trivial (PangoContext *context,
++			    PangoFontDescription *desc,
++			    PangoLanguage *language)
++{
++  /*
++   * For purposes of getting a font from a fontset and a shaper from that
++   * font, use this single character as a guinea pig.  That probably violates
++   * Pango's feelings six ways from Sunday, :-|
++   */
++  const gunichar somechar = '0';
++  PangoTrivial *pt;
++  PangoTrivialCache ptc;
++
++  if (!language)
++    {
++      language = context->language;
++      if (!language)
++	return NULL;
++    }
++
++  ptc.desc = desc;
++  ptc.language = language;
++  pt = g_hash_table_lookup (context->trivial_cache, &ptc);
++
++  if (!pt)
++    {
++      PangoTrivialCache *key;
++
++      pango_context_maybe_load_fontset (context, desc, language);
++      if (!context->last_fontset.font)
++	context->last_fontset.font = pango_context_get_font (context, somechar);
++      pt = _pango_trivial_new (context->last_fontset.font, language, somechar);
++      if (!pt)
++	return NULL;
++
++      key = g_new (PangoTrivialCache, 1);
++      key->desc = pango_font_description_copy (ptc.desc);
++      key->language = ptc.language;
++      g_hash_table_insert (context->trivial_cache, key, pt);
++    }
++
++  _pango_trivial_ref (pt);
++  return pt;
++}
++
++
+ static void add_engines (PangoContext      *context,
+ 			 const gchar       *text,
+                          gint               start_index,
+@@ -101,6 +242,16 @@
+   pango_font_description_set_weight (context->font_desc, PANGO_WEIGHT_NORMAL);
+   pango_font_description_set_stretch (context->font_desc, PANGO_STRETCH_NORMAL);
+   pango_font_description_set_size (context->font_desc, 12 * PANGO_SCALE);
++
++  context->last_fontset.current_desc = NULL;
++  context->last_fontset.current_fonts = NULL;
++  context->last_fontset.language = NULL;
++
++  context->trivial_cache =
++    g_hash_table_new_full ((GHashFunc)ptc_hash,
++			   (GEqualFunc)ptc_equal,
++			   (GDestroyNotify)ptc_destroy,
++			   (GDestroyNotify)_pango_trivial_unref);
+ }
+ 
+ static void
+@@ -124,7 +275,10 @@
+     g_object_unref (context->font_map);
+ 
+   pango_font_description_free (context->font_desc);
+-  
++
++  invalidate_last_fontset_cache (context);
++  g_hash_table_destroy (context->trivial_cache);
++
+   G_OBJECT_CLASS (parent_class)->finalize (object);
+ }
+ 
+@@ -160,13 +314,18 @@
+   g_return_if_fail (PANGO_IS_CONTEXT (context));
+   g_return_if_fail (!font_map || PANGO_IS_FONT_MAP (font_map));
+ 
+-  if (context->font_map)
+-    g_object_unref (context->font_map);
++  if (font_map == context->font_map)
++    return;
+ 
++  /* Ref before unref.  */
+   if (font_map)
+     g_object_ref (font_map);
+ 
++  if (context->font_map)
++    g_object_unref (context->font_map);
++
+   context->font_map = font_map;
++  invalidate_last_fontset_cache (context);
+ }
+ 
+ /**
+@@ -236,7 +395,7 @@
+ PangoFontset *
+ pango_context_load_fontset (PangoContext               *context,
+ 			    const PangoFontDescription *desc,
+-			     PangoLanguage             *language)
++			    PangoLanguage              *language)
+ {
+   g_return_val_if_fail (context != NULL, NULL);
+   g_return_val_if_fail (pango_font_description_get_family (desc) != NULL, NULL);
+@@ -588,12 +747,9 @@
+ 	     PangoAnalysis     *analyses)
+ {
+   const char *pos;
+-  PangoLanguage *language = NULL;
+   int next_index;
+   GSList *extra_attrs = NULL;
+   PangoMap *lang_map = NULL;
+-  PangoFontDescription *current_desc = NULL;
+-  PangoFontset *current_fonts = NULL;
+   PangoAttrIterator *iterator;
+   gboolean first_iteration = TRUE;
+   gunichar wc;
+@@ -634,7 +790,7 @@
+           if (!next_language)
+ 	    next_language = context->language;
+ 
+-	  if (i == 0 || language != next_language)
++	  if (i == 0 || context->last_fontset.language != next_language)
+ 	    {
+ 	      static guint engine_type_id = 0;
+ 	      static guint render_type_id = 0;
+@@ -649,36 +805,21 @@
+ 					 engine_type_id, render_type_id);
+ 	    }
+ 
+-	  if (i == 0 ||
+-	      language != next_language ||
+-	      !pango_font_description_equal (current_desc, next_desc))
+-	    {
+-	      pango_font_description_free (current_desc);
+-	      current_desc = next_desc;
+-	      language = next_language;
+-	      
+-	      if (current_fonts)
+-		g_object_unref (current_fonts);
+-	      
+-	      current_fonts = pango_font_map_load_fontset (context->font_map,
+-							   context,
+-							   current_desc,
+-							   language);
+-	    }
+-	  else
+-	    pango_font_description_free (next_desc);
++	  pango_context_maybe_load_fontset (context, next_desc, next_language);
++
++	  pango_font_description_free (next_desc);
+         }
+ 
+       wc = g_utf8_get_char (pos);
+       pos = g_utf8_next_char (pos);
+       
+       analysis->lang_engine = (PangoEngineLang *)pango_map_get_engine (lang_map, wc);
+-      analysis->font = pango_fontset_get_font (current_fonts, wc);
+-      analysis->language = language;
++      analysis->font = pango_context_get_font (context, wc);
++      analysis->language = context->last_fontset.language;
+       
+       /* FIXME: handle reference counting properly on the shapers */
+       if (analysis->font)
+-	analysis->shape_engine = pango_font_find_shaper (analysis->font, language, wc);
++	analysis->shape_engine = pango_font_find_shaper (analysis->font, context->last_fontset.language, wc);
+       else
+ 	analysis->shape_engine = NULL;
+       
+@@ -690,11 +831,6 @@
+ 
+   g_assert (pos - text == start_index + length);
+ 
+-  if (current_desc)
+-    pango_font_description_free (current_desc);
+-  if (current_fonts)
+-    g_object_unref (current_fonts);
+-
+   if (iterator != cached_iter)
+     pango_attr_iterator_destroy (iterator);
+ }
+@@ -728,17 +864,9 @@
+ 			   const PangoFontDescription   *desc,
+ 			   PangoLanguage                *language)
+ {
+-  PangoFontset *current_fonts = NULL;
+-  PangoFontMetrics *metrics;
+-
+   g_return_val_if_fail (PANGO_IS_CONTEXT (context), NULL);
+   g_return_val_if_fail (desc != NULL, NULL);
+ 
+-  current_fonts = pango_font_map_load_fontset (context->font_map, context, desc, language);
+-
+-  metrics = pango_fontset_get_metrics (current_fonts);
+-  
+-  g_object_unref (current_fonts);
+-
+-  return metrics;
++  pango_context_maybe_load_fontset (context, desc, language);
++  return pango_fontset_get_metrics (context->last_fontset.current_fonts);
+ }

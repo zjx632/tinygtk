@@ -1,0 +1,2819 @@
+Thu Sep  4 19:16:14 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* === Released 2.2.4 ===
+
+	* configure.in: Version 2.2.4, interface age 4.
+
+	* NEWS: updated for 2.2.4.
+
+Thu Sep  4 19:11:23 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* docs/RELEASE-HOWTO: updates.
+
+Wed Sep  3 23:18:17 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtkmenu.c (gtk_menu_real_move_scroll): for the END case,
+	use end_position - page_size instead of G_MAXINT, since
+	gtk_menu_scroll_to doesn't CLAMP anymore internally. (Fixes #121237,
+	reported by Havoc Pennington).
+
+Wed Sep  3 21:58:03 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtkiconfactory.c (cached_icon_free): if icon->style != NULL,
+	unref it. (Fixes memleak, patch from Kjartan Maraas).
+
+Wed Sep  3 21:38:26 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gdk/Makefile.am, gdk/linux-fb/gdkfbmanager.c, gdk/x11/gdkcolor-x11.c,
+	gdk-pixbuf/io-gif.c, gtk/Makefile.am, gtk/gtkcalendar.c,
+	gtk/gtkclist.c, gtk/gtkctree.c, gtk/gtkdnd.c, gtk/gtkentry.c,
+	gtk/gtkhandlebox.c, gtk/gtkitemfactory.c, gtk/gtkmenu.c,
+	gtk/gtknotebook.c, gtk/gtkrange.c, gtk/gtkrc.h, gtk/gtktree.c,
+	gtk/gtktypeutils.h, gtk/gtkwindow.c: big patch from Kjartan Maraas
+	to fix numerous typos.
+
+2003-09-02  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkdisplay-win32.c (gdk_display_open): Don't call
+	CloseHandle() on the HMODULE returned from GetModuleHandle().
+	Didn't cause any harm, but didn't do anything useful either. When
+	running a GTK+ program under MS's debugger, the CloseHandle() call
+	would cause a "first-chance exception" in ntdll.dll to show up.
+	(The exception is caught appropriately if you let it proceed, but
+	it confuses the person using the debugger). Thanks to Bruce
+	Hochstetler for noticing.
+
+Tue Sep  2 21:01:19 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_button_press): revert the change
+	to only select when button 1 is pressed introduced in the fix of
+	bug #120187.
+
+2003-08-29  Laurent Dhima  <laurenti@alblinux.net>
+
+	* configure.in: Added "sq" to ALL_LINGUAS.
+	
+Tue Aug 26 19:44:02 BST 2003  Tony Gale <gale@gtk.org>
+
+	* docs/faq/gtk-faq.sgml: Fix missing tag (#120713)
+
+Tue Aug 26 10:01:18 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* === Released 2.2.3 ===
+
+Tue Aug 26 09:57:38 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkkeys-x11.c (update_keymaps): Fix variable
+	declaration not at start of block. (#120371, Damien Carbery)
+
+	* NEWS: Bunch of typo fixes from Kristian.
+
+Mon Aug 25 21:48:34 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* configure.in: Version 2.2.3, interface age 3
+
+	* NEWS: Updated
+
+	* gdk/x11/gdkkeys-x11.c (gdk_keymap_translate_keyboard_state):
+	SGML markup fixes.
+
+Mon Aug 25 19:55:55 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtktextview.c (gtk_text_view_update_layout_width): 
+	Since we add one to the layout's reported width to
+	account for the cursor, we need to subtract one when
+	setting the wrap width for the layout. (Fixes infinite
+	loop (#120325, Frederic Crozat)
+
+	* gtk/gtktextlayout.c (gtk_text_layout_get_line_display): 
+	Be a bit more careful about rounding when converting
+	wrapped width from Pango units to pixels.
+
+Mon Aug 25 17:28:04 2003  Owen Taylor  <otaylor@redhat.com>
+ 
+ 	* gtk/gtknotebook.c (gtk_notebook_forall): Don't
+ 	include page->menu_label - causes various problems,
+ 	including #120477.
+ 
+Mon Aug 25 23:21:43 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Fixes #115871, reported by Michael Natterer.
+
+	* gtk/gtktreeprivate.h: added GtkTreeSelectMode enum,
+	added ctrl_pressed and shift_pressed bitfields,
+	(_gtk_tree_selection_internal_select_node): replace GdkModifierType
+	arg with GtkTreeSelectMode.
+
+	* gtk/gtktreeselection.c (gtk_tree_selection_set_mode),
+	(gtk_tree_selection_select_path), (gtk_tree_selection_unselect_path),
+	(_gtk_tree_selection_internal_select_node): all updated for
+	GdkModifierType -> GtkTreeSelectMode move.
+
+	* gtk/gtktreeview.c (gtk_tree_view_button_press): set ctrl_pressed
+	and shift_pressed around selection handling block,
+	(gtk_tree_view_real_select_cursor_row),
+	(gtk_tree_view_real_toggle_cursor_row),
+	(gtk_tree_view_real_selection_cursor_parent),
+	(gtk_tree_view_real_set_cursor): use ctrl_pressed and shift_pressed,
+	instead of checking the event state. And also updates for the
+	GdkModifierType -> GtkTreeSelectMode move.
+
+Wed Aug 20 21:26:49 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkplug.c (gtk_plug_focus): Send the focus on
+	to the parent when there was no focus widget before
+	and no focus widget after - that is, when there are
+	no focusable widgets. (#108678, help tracking it
+	down from Padraig O'Briain, Federico Mena Quintero, )
+
+	* gtk/gtkxembed.[ch]: Move various shared utilities
+	for the XEMBED protocol eused by GtkPlug and GtkSocket 
+	here.
+
+	* gtk/gtkxembed.[ch] gtkplug.c gtksocket.c: Implement
+	a flag bit that is sent with focus mesages to indicate
+	that the focus has wrapped around on the toplevel;
+	use this bit to catch infinite loops when there is no
+	focusable widget at ll in the entire toplevel.
+
+	* tests/testsocket.c (child_read_watch): Remove an
+	extraneous unref.
+
+	* gtk/gtkplug.c gtk/gtksocket.c gtk/gtkxembed.h: 
+	Up XEMBED protocol version to 1, add logic for 
+	sending the right version in XEMBED_EMBEDDED_NOTIFY.
+
+	* gtk/gtksocket.c (gtk_socket_add_window): Send
+	the embedder window in the XEMBED_EMBEDDED_NOTIFY
+	as the spec requires.
+
+Mon Aug 25 16:15:41 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkkeys-x11.c: Fix up CapsLock and 
+	NumLock handling for non-XKB. Add a special case
+	hack for NumLock on Sun servers. (Patch from
+	Robert Basch, #115819)
+
+Sun Aug 24 17:00:03 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkrc.c: Fix some missing initializations of
+	rc_file->directory.
+
+Sat Aug 23 21:40:18 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkrc.c (gtk_rc_context_parse_one_file): Fix 
+	problem where rc_file->directory wasn't always getting
+	set. (#120549, Luis Villa)
+
+2003-08-22  Samúel Jón Gunnarsson  <sammi@techattack.nu>
+
+	* configure.in: Added "is" to ALL_LINGUAS.
+
+2003-08-22  Christian Rose  <menthos@menthos.com>
+
+	* configure.in: Added "ne" to ALL_LINGUAS.
+
+Thu Aug 21 16:00:36 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkrc.c: Keep a list of current GtkRcFiles
+	being parsed, not just the directories for those
+	files. Use that to catch recursion. (Part of
+	#114988)
+
+Thu Aug 21 21:27:45 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Fix option menu scrolling (#119821, Owen Taylor).
+
+	* gtk/gtkmenu.c (gtk_menu_scroll_to): remove logic introduced
+	by #80484 and the CLAMP,
+	(get_menu_height): new function,
+	(gtk_menu_real_move_scroll): sort of moved the CLAMP here to correct
+	new_offset to handle page up/down right.
+
+Thu Aug 21 15:17:42 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkkeys-x11.c: Change the interpretation
+	of consumed_modifiers so that it contains:
+	 - Modifiers combinations actually found in
+	   state.
+	 - Single modifier modifier combinations.
+	But not multi-modifier combinations that aren't
+	in event->state. Document. (#100439)
+
+Thu Aug 21 20:53:46 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	Slightly modified patch from Yann Rouillard to improve selection
+	behavior with the mouse. Fixes #120187.
+
+	* gtk/gtktreeview.c (gtk_tree_view_button_press): only
+	select/deselect items on the first button press of button 1,
+	expand checks for row_activated to include triple clicks.
+
+Thu Aug 21 01:33:51 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtkspinbutton.c (gtk_spin_button_size_request): always round
+	approximate digit widths up, to avoid truncation, convert to
+	pango pixels when we have the full string width instead of converting
+	the approx digit width to pango pixels, take inner border and
+	interior focus into account correctly. (Fixes #116368, patch from
+	Morten Welinder).
+
+2003-08-20  Noah Levitt  <nlevitt@columbia.edu>
+
+	* gtk/queryimmodules.c: Don't look at the same directory twice (in
+	simple cases). (#120342)
+
+Wed Aug 20 22:03:25 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtkspinbutton.c (start_spinning): change the type of step
+	to gdouble, since it gets it's data from a gdouble (Fixes #113547).
+
+Mon Aug 18 17:19:12 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* modules/input/gtkimcontextxim.[ch]: Substantially
+	rework the handling of status windows:
+	
+	 - Store the current StatusWindow in the 
+	   GtkIMContextXIM structure and vice-versa, so we
+	   don't have to hunt the window hierarchy on
+	   cleanup.
+	 - Use the Gtkidget hierarchy instead of/or as well
+	   as the GdkWindow hierarchy when finding the toplevel;
+	   this helps for things like GtkHandlebox
+	 - Watch GtkWidget::hierarchy_changed to catch 
+	   changes in the toplevel without changes in the
+	   GdkWindow (reparenting)
+	 - Never create the GtkWindow for the status window
+	   unless we have text to display.
+	 - Various cleanups, add lots of comments.
+
+	(#115077, much help from Takuro Ashie and Hidetoshi
+	Tajima in tracking this down and figuring out a fix.)
+
+	* modules/input/gtkimcontextxim.c (gtk_im_context_xim_focus_in): 
+
+	* modules/input/gtkimcontextxim.c: Track the current
+	screen for each toplevel so that we show the status
+	window on the right screen. (#116340, James Su)
+
+	* modules/input/gtkimcontextxim.c: If create a new IC
+	when we currently have the focus, call XSetICFocus()
+	on it.
+	
+	* modules/input/gtkimcontextxim.c (get_im): Fix bug
+	with multiple open screens.
+
+Tue Aug 19 14:37:46 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkimmulticontext.[ch] (struct _GtkIMMulticontext): 
+	Replace client_window field with 'priv' pointer,
+	retaining binary compatibility.
+
+	* gtk/gtkimmulticontext.c (gtk_im_multicontext_set_slave): 
+	save use_preedit/cursor_location/focus status and set
+	up the new slave appropriately. (#118651, Botond Botyanszki)
+
+Tue Aug 19 13:58:50 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkgeometry-x11.c (gdk_window_scroll): 
+	Don't use impl->position_info.clip_rect for toplevels.
+	(#107068, reported by Thomas Mirlacher)
+
+Mon Aug 18 11:48:51 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkdrawable-x11.c (convert_to_format): 
+	Add a fallback for unaligned source data for
+	FORMAT_ARGB_MASK. (#117217)
+
+Mon Aug 18 10:51:57 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* configure.in: Rework handling of REBUILD_PNGS,
+	so that we also don't try to REBUILD_PNGS when
+	cross-compiling and there is no gdk-pixbuf-csource.
+	But give an error if gtk/stock-icons/gtkstockpixbufs.h
+	is not in the source tree. (Note that REBUILDS_PNG
+	was set backwards before, which is why you always
+	had to manually recreate gtkstockpixbufs.h!)
+
+	* gtk/stock-icons/Makefile.am: Don't make 
+	gtkstockpixbufs.h depend on newly built gdk-pixbuf-csource
+	when cross-compiling. (Was already in HEAD branch)
+
+Mon Aug 18 10:19:55 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk+-2.0-uninstalled.pc.in: Add a missing gtk/ in the
+	path to libgtk.la. (#120080, Benedikt Spranger)
+
+Sat Aug 16 10:34:49 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* modules/input/imcedilla.c: Make the list of default
+	languages more comprehensive. (Suggestion of
+	Fco. Javier F. Serrador)
+
+Sat Aug  9 12:47:11 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/gdk.c (gdk_arg_context_parse): Fix broken 
+	parentheses when skipping args.
+
+Fri Aug 15 16:54:39 2003  Owen Taylor  <otaylor@redhat.com>
+
+	Improve Cedilla handling - based on a patch from Gustavo 
+	De Nardin, #111334
+
+	* modules/input/imcedilla.c po/POTFILES.in: Input method that 
+	produces C_WITH_CEDILLA rather than C_WITH_ACUTE for 
+	dead_acute+c combinations. Make this the default for
+	fr and pt.
+
+	* gtk/gtkimmulticontext.c (gtk_im_multicontext_get_slave): 
+	Use LC_CTYPE instead of LC_MESSAGES to pick the default
+	input method.
+
+Fri Aug 15 17:00:19 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkimcontextsimple.c: Fix missing compose sequence
+	for Multi_key+c+apostrophe.
+
+Fri Aug 15 21:57:34 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_adjustment_changed): stop editing
+	on vertical scrolling. (#108035, reported by Tim Janik).
+
+Fri Aug 15 20:06:42 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_model_sort_row_changed),
+	(gtk_tree_model_sort_level_find_insert),
+	(gtk_tree_model_sort_insert_value): fix off-by-one error.
+	(#109292 continued, patch from Yann Rouillard).
+
+Fri Aug 15 19:04:00 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_class_init),
+	(gtk_tree_view_key_press), (gtk_tree_view_search_key_press_event):
+	Also support the up, down, left, right, home, end, page up and
+	page down keys on the numpad. (#119419, reported by Alex Larsson).
+
+Fri Aug 15 12:34:04 2003  Owen Taylor  <otaylor@redhat.com>
+
+	Fixes for X/Cygwin builds of GTK+ (#107623, Masahiro Sakai):
+
+	* configure.in (GDK_DEP_LIBS_FOR_X): Make sure that
+	we link libgtk against X explicitely, since we
+	make GTK+ calls for plug/socket.
+
+	* gtk/queryimmodules.c: Use USE_LA_MODULES and 
+	G_MODULE_SUFFIX here. 
+
+	* gdk/x11/gdkdrawable-x11.c (gdk_x11_draw_image): Protect
+	XShmPutImage with #ifdef USE_SHM.
+
+Thu Aug 14 18:25:39 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkfilesel.c (gtk_file_selection_populate):
+	Don't reposition the cursor when we aren't trying
+	to complete. (Fixes problems with selection on
+	startup, #108433, reported by Mark Finlay.)
+
+	* gtk/gtkfilesel.c (gtk_file_selection_populate): Remove
+	code that tried to position the cursor after the common
+	prefix when there was one, it wasn't working, and
+	would be hard to fix. Just always put the cursor
+	at the end when completing.
+
+Thu Aug 14 17:58:23 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkfilesel.c (get_current_dir_utf8): If getting
+	the current directory fails because of encoding
+	conversion problems, walk up textually to parent
+	directories until we can convert. (#113627)
+
+Wed Aug 13 17:01:49 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkmenushell.[ch] (gtk_menu_shell_enter_notify):
+	Remove usage of menu_shell->ignore leave which was
+	to deal with stray events we no longer get because
+	we do grabbing differently. Comment it as unused in
+	the header. (#115837, Keith Bissett)
+
+Wed Aug 13 16:32:43 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkmenu.c (gtk_menu_position, gtk_menu_window_size_request): 
+	Fix some places that weren't properly Xinerama-ified.
+
+	* gtk/gtkmenu.c: Fix problem with windows that scroll
+	at the top of the screen.
+
+Wed Aug 13 11:34:53 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkcombo.c (gtk_combo_init): connect_after() to 
+	key-press-event on the entry, so input methods get access to 
+	key presses before GtkCombo customization.
+	(#115451, Botond Botyanszki)
+
+Tue Aug 12 15:00:15 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkwindow.c (gtk_window_real_set_focus): Protect
+	against reentrancy from ::focus-out handlers. 
+	(#118129, Felipe Heidrich)
+
+Tue Aug 12 14:27:42 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkkeyhash.c (_gtk_key_hash_lookup): Remove
+	GDK_LOCK_MASK before calling
+	gdk_keymap_translate_keyboard_state so bindings 
+	and accelerators are independent of the Caps-lock
+	key. (#115384, reported by Toni Willberg)
+
+Mon Aug 11 12:07:14 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkevents-x11.c (get_real_window): Add missing
+	break statements (#119494, Soeren Sandmann)
+
+Mon Aug 11 11:10:07 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkwidget.h: Mark parent public as well; it's
+	extensively accessed in existing code, so there is
+	no advantage in making people use get_parent().
+	(Tweak to #119463 fix)
+
+2003-08-10  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkwidget.h (struct _GtkWidget): Mark some members as public. 
+
+2003-08-09  Noah Levitt  <nlevitt@columbia.edu>
+
+	* gdk/gdkevents.h:
+	* docs/reference/gdk/tmpl/windows.sgml: Elaborate a bit more in the
+	docs on GdkFilterFunc and GdkFilterReturn.
+
+2003-08-08  Matthias Clasen  <maclas@gmx.de>
+
+	* gdk/gdkregion-generic.c (gdk_region_spans_intersect_foreach):
+	Fix a segfault.  (#115284, Jan Kratochvil)
+
+2003-08-08  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkevents-win32.c (print_event): Print also the root
+	coordinates for events that have such. Print coordinates for enter
+	and leave events.
+
+	(gdk_event_translate): Don't use event uninitialixed in the
+	return_exposes branch of the WM_PAINT handler.
+
+	* gdk/win32/gdkwindow-win32.c (gdk_window_new,
+	_gdk_windowing_window_get_pointer, _gdk_windowing_window_at_pointer): 
+	Must offset top-level window coordinates here, too.
+
+2003-08-07  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkinput-win32.h
+	* gdk/win32/gdkinput-win32.c (_gdk_input_configure_event,
+	_gdk_input_enter_event): Drop the GdkEvent* parameter, it wasn't
+	used.
+
+	* gdk/win32/gdkevents-win32.c (gdk_event_translate): Adapt caller
+	accordingly, in fact an uninitialised variable was dereferenced.
+	
+
+	[Win32] Add support for multiple monitors. 
+	
+	* gdk/win32/gdkprivate-win32.h
+	* gdk/win32/gdkglobals-win32.c: New global variables for
+	multiple-monitor info: _gdk_num_monitors, _gdk_monitors, and
+	_gdk_offset_x and _gdk_offset_y.
+	
+	* gdk/win32/gdkdisplay-win32.c (count_monitor, enum_monitor): New
+	functions, enumeration functions passed to EnumDisplayMonitors().
+
+	(gdk_display_open): If the EnumDisplayMonitors() and
+	GetMonitorInfo() API is present (on Win98, Win2000 and newer), use
+	if to find out monitor info.
+
+	Calculate the offset between Win32 coordinates (relative to the
+	primary monitor's origin (and thus negative on monitors to the
+	left of or above it), and GDK's (visible coordinates should be
+	non-negative).
+	
+	* gdk/win32/gdkscreen-win32 (gdk_screen_get_n_monitors,
+	gdk_screen_get_monitor_geometry): Use information collected above.
+
+	(gdk_window_move, gdk_window_move_resize_window_get_geometry):
+	Subtract _gdk_offset_{x,y} from GDK root window coordinates.
+
+	(gdk_window_get_geometry, gdk_window_get_origin,
+	gdk_window_get_frame_extents): For top-level windows, add
+	_gdk_offset_{x,y} to GDK root window coordinates
+
+	Still need to handle multiple monitors in
+	gdk_window_fullscreen(). Probably should make the window
+	fullscreen on the monitor where the cursor is?
+
+	* gdk/win32/gdkevents-win32.c: Add _gdk_offset_{x,y} to all GDK
+	root window coordinates in GdkEvents.
+
+	
+	[Win32] Fix geometry hint handling. Add support for resize
+	increment and base size, and aspect ratio geometry hints. The
+	"gridded geometry" test in testgtk now works beautifully.
+
+	* gdk/win32/gdkwindow-win32.c (gdk_window_set_geometry_hints):
+	Turns out this function shouldn't actually ever modify the
+	window's size, just store the hints. (Old code kept for a while
+	inside #if 0.)
+
+	(gdk_window_set_hints): Remove presumably broken code that handles
+	the position hints, this function is obsolete anyway.
+
+	* gdk/win32/gdkevents-win32.c: Drop the current_{x,y}_root
+	variables, not used.
+
+	(adjust_drag): New function, used to implement resize increment
+	hints.
+
+	(gdk_event_translate): Handle WM_SIZING, implement resize
+	increment and base size, and aspect ratio geometry hints here. The
+	WM_GETMINMAXINFO handler takes care of the minimum and maximum
+	size hints as before. Fix the WM_GETMINMAXINFO handler to take
+	into account window decorations. No need to modify the
+	ptMaxPosition and ptMaxTrackSize fields in the MINMAXINFO struct,
+	the defaults are fine.
+	
+	* gdk/win32/gdkprivate-win32.h 
+	* gdk/win32/gdkwindow-win32.c (_gdk_win32_adjust_client_rect,
+	_gdk_win32_get_adjusted_client_rect): New helper functions.
+
+
+	Merge from HEAD: 2003-08-07 Hans Breuer <hans@breuer.org>
+
+	* gdk/win32/gdkevents-win32.c : finally use TrackMouseEvent
+	(only if the new window not known to Gdk) to get proper
+	leave notification, and get rid of the wrong placed 
+	tooltips, bug #102283
+ 
+	(gdk_event_translate) : small code reordering to not get
+	GDK_MOTION_NOTIFY for still mouse and get back tooltips on 
+	menus, bug #117367
+
+Thu Aug  7 16:49:29 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkwidget.c (gtk_widget_set_style_internal): 
+	Fix a bug where on theme change, resize/redraw wasn't
+	properly getting queued on toplevel windows. (#116346,
+	Rajkumar Siva)
+
+	* gtk/gtkwidget.c (gtk_widget_invalidate_widget_windows): 
+	Fix bug where wrong coordinates were used for toplevel
+	window.
+
+2003-08-07  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkspinbutton.c (gtk_spin_button_default_input): Use g_strtod() 
+	to cope with C libraries with crippled locale support.  (#115293)
+
+2003-08-07  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/gdk.def
+	* gdk/win32/gdkfont-win32.c (gdk_fontset_load_for_display): Add
+	missing function, trivially implement.
+	
+	Merge from HEAD: 2003-08-06  Hans Breuer <hans@breuer.org>
+
+	* gdk/win32/gdkpixmap-win32.c (gdk_pixmap_new) :
+	initialize bits to 0 (probably default on NT)
+
+	* gdk/win32/gdkwindow-win32.c(gdk_window_set_modal_hint) :
+	set HWND_NOTOPMOST for modal==FALSE, fixes bug #118435
+
+	* gdk/win32/gdkwindow-win32.c : implement gdk_window_[un]fullscreen
+	(gdk_window_{move,resize,move_rezize})) : noop if FULLSCREEN
+
+	* gdk/win32/gdkwindow-win32.c (gdk_window_set_icon) :
+	against all expectations it is basically ony a call with WM_SETICON
+	needed (the visual effect is there, though colors or mask are
+	still somewhat wrong).
+
+	* gdk/win32/gdkwindow-win32.h : place to store the HICON
+
+	* gdk/win32/gdkdrawabke.win32.c : readded the conditional end
+	pixel drawing as it was fixed at 1999-08-23
+
+2003-08-07  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkctree.c (draw_row): Don't cut descenders when rendering.  
+	(#118646, Charles Kerr)
+
+Tue Aug  5 10:07:08 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkmessagedialog.c (gtk_message_dialog_get_property): 
+	Add a missing break. (#119156, Callum McKenzie)
+
+Mon Aug  4 14:53:46 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkimage-x11.c (_gdk_windowing_image_init): 
+	Fix problem where use_xshm was getting set wrong if
+	MIT_SHM wasn't found. (George Lebl)
+
+2003-08-04  Tor Lillqvist  <tml@iki.fi
+
+	* gdk/win32/gdkevents-win32.c (apply_filters): Fix braino:
+	actually use the passed-in filter list. The function also needs a
+	GdkWindow parameter, as filter functions expect
+	GdkEvent::any.window to be valid. (#119034, Hans Breuer)
+
+2003-08-03  Matthias Clasen  <maclas@gmx.de>
+
+	* gdk/x11/gdkscreen-x11.c (gdk_screen_get_n_monitors): 
+	(gdk_screen_get_monitor_geometry): Improve wording of the docs, avoid the
+	term "virtual screen".  (#119030, Tor Lillquist)
+
+2003-08-02  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkcolorsel.c (color_sample_drop_handle) 
+	(palette_drop_handle): Accept drops with the wrong format, since the KDE color chooser 
+	incorrectly drops application/x-color with format 8.  (#118810)
+
+2003-08-02  Tor Lillqvist  <tml@iki.fi>
+
+	Fix gdk/win32 window geometry handling again. The window position
+	in a GDK_CONFIGURE event should be that of the client area, not of
+	the window decorations. (I was confused by the term "window
+	border" in X11. It does *not* mean the window manager
+	decorations. There are no X11-style window borders in Win32.)
+	Also, this time do take the geometry hints into account
+	appropriately when moving windows. Now testgtk's gravity test's
+	move buttons work OK. There are stil problems with taking gravity
+	into account when showing a hidden window.
+
+	* gdk/win32/gdkwindow-win32.h: Keep a whole GdkGeometry as hints
+	instead of separate fields.
+	
+	* gdk/win32/gdkevents-win32.c (handle_configure_event): Don't
+	adjust for decorations.
+
+	* gdk/win32/gdkwindow-win32.c (get_outer_rect,
+	adjust_for_gravity_hints): New functions.
+	(gdk_window_move, gdk_window_resize, gdk_window_move_resize): Use
+	above functions, take geometry hints into account.
+	(gdk_window_set_geometry_hints): Size hints specicy client area,
+	not including decorations.
+	
+Fri Aug  1 17:10:22 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkfilesel.c (cmpl_completion_fullname): Always
+	return an absolute path (#115590), fix a problem where
+	you could crash the file selector with a looong name
+	by returning a newly allocated buffer.
+
+Fri Aug  1 16:44:51 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkfilesel.c (update_cmpl): Fix obvious reallocation
+	bug in rarely or never hit code path (#118071,
+	Tor Lillqvist)
+
+Fri Aug  1 16:30:13 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkdrawable-x11.c (_gdk_x11_have_render): 
+	If the check for missing depths, try actually creating pixmaps
+	of the depths to deal with Xinerama not reporting
+	all the depths it should. (#115822)
+
+Fri Aug  1 15:33:59 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtksocket.c: Patch from Denis Mikhalkin to
+	forward KeyRelease events as well as KeyPress events.
+	(#115597)
+
+Fri Aug  1 15:06:25 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/gdk.c (gdk_parse_args): g_set_prgname("<unknown>")
+	if argc is 0 as well, instead of leaving it unset.
+	(#116023, Michael Meeks)
+
+2003-07-29  Tor Lillqvist  <tml@iki.fi>
+
+	Fix for #108007, #112402, #117042: There was confusion in
+	gdk/win32 at various places whether a window position refers to
+	the decoration position or the client area position. Also whether
+	window size includes decorations or not.
+	
+	The correct interpretation apparently is that in GDK (like in
+	X11), a top-level window position means the decoration's position,
+	but size means the window's inner size (client area size). In the
+	Win32 API, the window size usually includes the decorations,
+	though.
+	
+	* gdk/win32/gdkevents-win32.c (decode_key_lparam): Move inside
+	#ifdef G_ENABLE_DEBUG.
+	(handle_configure_event): New function, generates GDK_CONFIGURE
+	events from WM_SIZE and WM_MOVE messages. Even if no event is
+	generated because of the event mask, still set the private
+	position and size fields. Calculate position and size correctly.
+	(gdk_event_translate): Call handle_configure_event().
+
+	* gdk/win32/gdkgeometry-win32.c: Cosmetics.
+
+	* gdk/win32/gdkwindow-win32.c: Use GDI_CALL() and API_CALL()
+	macros. Cosmetic debugging output changes.
+	(SafeAdjustWindowRectEx): Remove. If an application wants to
+	locate a window outside of the screen, it's not GDK's business to
+	prevent it. And anyway, with multiple monitors, negative
+	coordinates are perfectly normal.
+	(gdk_window_new): Adjust the window size for decorations after
+	_gdk_window_init_position() has done its job. (But the big window
+	code currently is presumably broken on Win32 anyway.)
+	(gdk_window_move): The position passed in is supposed to be that
+	of the window border, so don't need to adjust for decorations.
+	(gdk_window_resize, gdk_window_move_resize): Simplify somewhat.
+
+2003-07-27  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkevents-win32.c (build_key_event_state): On Win9x,
+	the keyboard state returned by GetKeyboardState() doesn't
+	distinguish between the left and right Control and Alt keys. Thus
+	we cannot detect AltGr (which is supposed to be left Control +
+	right Alt) the same way as on NT-based systems, but have to accept
+	either Control + either Alt as AltGr.
+
+2003-07-27  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktreeselection.c (gtk_tree_selection_selected_foreach):
+	Fix function name in warning message.  (#118156, Tim-Philipp
+	Müller)
+
+	* gtk/gtkcellrenderer.c (gtk_cell_renderer_get_property):
+	is-expander and is-expanded are boolean properties, not ints.
+	(#118359, Josh Parsons)
+
+2003-07-25  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkprivate-win32.h
+	* gdk/win32/gdkglobals-win32.c: New flags _gdk_input_locale_is_ime
+	and _gdk_keyboard_has_altgr.
+	
+	* gdk/win32/gdkevents-win32.c: Lots of changes. Most important
+	ones detailled here.
+
+	Code that has been ifdeffed out for a long time removed. Remove
+	some really old doc comments that were left behind for some public
+	functions, the official ones are in the X11 backend anyway. Change
+	GDK_WINDOW_OBJECT() calls to GdkWindowObject casts. Reformat
+	multi-line boolean expressions to have the operators at ends of
+	lines.
+
+	As mouse capture with SetCapture() indeed seems to work OK, no
+	need to have the correspoinding macro USE_SETCAPTURE and ifdefs.
+
+	Ifdef out the gdk-ping-msg stuff. I don't remember why it was
+	needed at some time, and things seem to work fine now without
+	(knock on wood).
+
+	Ifdef out the search for some Latin locale keyboard layout being
+	loaded. Not used currently, but might be needed after all, if we
+	decide that we want to be able to generate ASCII control character
+	events with a non-Latin keyboard.
+
+	(assign_object): New helper function, handles the g_object_ref()
+	and unref() calls when assigning GObject pointers.
+		
+	(generate_crossing_events): Also generate the GDK_NOTIFY_INTERIOR
+	enter event when the pointer has moved to an ancestor window. Was
+	left out by mistake.
+
+	(gdk_window_is_ancestor): Renamed from gdk_window_is_child().
+
+	(gdk_pointer_grab, gdk_pointer_ungrab): Implement the confine_to
+	functionality, using ClipCursor().
+		
+	(find_window_for_mouse_event): Splice part of code into new
+	function find_real_window_for_grabbed_mouse_event().
+
+	(fixup_event, append_event, apply_filters): New functions, code
+	refactored out from elsewhere.
+
+	(synthesize_enter_or_leave_event, synthesize_leave_event,
+	synthesize_enter_event,
+	synthesize_leave_events,synthesize_enter_events): Also take a
+	GdkCrossingMode parameter, in preparation to generating
+	GDK_CROSSING_GRAB and GDK_CROSSING_UNGRAB events.
+
+	(fixup_event, append_event, fill_key_event_string): New functions,
+	code refactoring.
+
+	(vk_from_char, build_keypress_event, build_keyrelease_event):
+	Removed as part of dropping WM_CHAR handling.
+
+	(build_key_event_state,gdk_event_translate): Call
+	GetKeyboardState(), once, for each keyboard message, instead of
+	several calls to GetKeyState() here and there.
+
+	(gdk_event_translate): Fix bugs #104516, #104662, #115902. While
+	at it, do some major refactoring, and some fixes for potential
+	problems noticed while going through the code.
+
+	Don't handle WM_CHAR at all. Only handle WM_KEYDOWN and
+	WM_KEYUP. Don't need the state variables related to whether to
+	wait for WM_CHAR or not, and whether the current key is
+	AltGr. Remove lots of complexity. Thus don't need the
+	use_ime_composition flag.
+
+	Not handling WM_CHAR means dead key handling will have to be taken
+	care of by GTK, but that seems to work fine, so no worry.
+
+	Another side-effect is that Alt+keypad digits don't work any
+	longer, but it's better to learn to use GTK's ISO14755 support is
+	anyway.
+
+	Be more careful in checking whether AltGr is involved. Only
+	attempt to handle it if the keyboard actually has it. And
+	explicitly check for *left* Control plus *right* Alt being
+	pressed. Still, allow (left) Alt and/or (right) Control with AltGr
+	chars.
+
+	Handle keys using similar code as in the X11 backend. As we have
+	built a keymap in gdkkeys-win32.c anyway, use it by calling
+	gdk_keymap_translate_keyboard_state() to look up the keysym from
+	the virtual key code and keyboard state. Build the key event
+	string in exactly the same way as the X11 backend.
+
+	If an IME is being used, don't generate GDK events for keys
+	between receiving WM_IME_STARTCOMPOSITION and
+	WM_IME_ENDCOMPOSITION, as those keys are for the IME.
+	
+	For WM_IME_COMPOSITION, handle all the Unicode chars returned from
+	the IME, not just the first one.
+
+	gdk_event_translate() is still quite complex, could split the
+	message handler cases out into separate functions.
+
+	On mouse events, when the mouse is grabbed, use
+	find_real_window_for_grabbed_mouse_event() in order to be able to
+	generate correct crossing events.
+	
+	No longer take a pre-allocated GdkEvent as parameter. Instead,
+	allocate events as needed and append them to the queue. (This is
+	different from how gdk_event_translate() in the X11 backend
+	works.) This change made the code much clearer, especially in the
+	cases where we have to generate several GDK events for one Windows
+	message.  Return FALSE if DefWindowProc() should be called, TRUE
+	if not. If DefWindowProc() should not be called, also return the
+	value to be returned from the window procedure.
+
+	(Previously, the interaction with gdk_event_translate()'s caller
+	was much more complex, when we had to indicate whether the
+	already-queued event should be left in the queue or removed, and
+	in addition also had to indicate whether to call DefWindowProc()
+	or not, and what value to return from the window procedure if
+	not.)
+
+	Don't use a separate "private" variable required to be pointing to
+	the GdkWindowObject of the "window" variable at all times. Just
+	use casts, even if looks a bit uglier.
+
+	Notice destroyed windows as early as possible, and break out of
+	the messsage switch.
+
+	Use _gdk_pointer_root as current_window when the pointer is
+	outside GDK's top-level windows.
+	
+	On WM_INPUTLANGCHANGE, set _gdk_input_locale_is_ime as
+	appropriate, based on ImmIsIME().
+	
+	(gdk_event_translate, gdk_event_send_client_message_for_display,
+	gdk_screen_broadcast_client_message): Implement client messages.
+	Use a registered Windows message to pass GDK client messages. Note
+	that the amount of user data is restricted to four bytes, as it is
+	carried in the LPARAM. (The WPARAM is used for the message type
+	"atom".)
+	
+	(real_window_procedure): Adapt for new gdk_event_translate()
+	interface.
+
+	* gdk/win32/gdkmain-win32.c (_gdk_windowing_init): Set
+	_gdk_input_locale_is_ime initially.
+
+	* gdk/win32/gdkwindow-win32.c: Use g_object_ref()/unref() instead
+	of g_colormap_ref()/unref().
+
+	(gdk_window_new): Made code a bit more like the X11 one, pretend
+	to handle screens (although we just have one for now).
+
+	* gdk/x11/gdkevents-x11.c
+	(gdk_event_send_client_message_for_display,
+	gdk_screen_broadcast_client_message): Document the user data
+	limitation on Win32.
+
+	* gdk/win32/gdkevents-win32.c (print_event): More complete enter
+	and leave notify detail output.
+
+	* gdk/win32/gdkkeys-win32.c (update_keymap): Make dead keys
+	visible to GDK and GTK. Store the corresponding GDK_dead_* keysym
+	for those, so that the GtkIMContextCimple compose tables will
+	work. Deduce if the keyboard layout has the AltGr key, and set the
+	above flag accordingly.
+
+2003-07-23  Matthias Clasen  <maclas@gmx.de>
+
+	* docs/faq/gtk-faq.sgml: Mention Xnest as a way to debug GTK+ apps. 
+
+Thu Jul 17 19:24:51 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Fixes issues pointed out by Morten Welinder in #115140.
+
+	* gtk/gtktreeview.c (gtk_tree_view_size_request): fix comment,
+	(do_validate_rows): update validated_area with a logic OR instead
+	of a bitwise OR,
+	(validate_rows_handler): make the if statement match the one in
+	validate_rows(), so we don't leak the timeout.
+
+Thu Jul 17 19:12:02 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_remove_widget): the treeview
+	should only grab focus back if the "cell_editable" widget still
+	has focus. (Fixes #110104, testcase provided by Marco Pesenti
+	Gritti).
+
+Thu Jul 17 19:06:34 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeviewcolumn.c (_gtk_tree_view_column_realize_button):
+	Don't set attr.event_mask twice, those things were meant to be
+	ORred. (#115139, pointed out by Morten Welinder).
+
+Thu Jul 17 16:11:21 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_rows_reordered): stop editing
+	if needed. (Fixes #115869, reported by Michael Natterer).
+
+Wed Jul 16 19:31:19 BST 2003  Tony Gale <gale@gtk.org>
+
+	* docs/tutorial/gtk-tut.sgml docss/faq/gtk-faq.sgml:
+	copy current versions over from HEAD (#82550)
+
+Sat Jul 12 16:16:04 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_drag_data_received): special
+	case drags to "0", scroll to the top after dropping. (Fixes #94968,
+	reported by Alp Toker).
+
+Sat Jul 12 16:08:32 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* demos/gtk-demo/editable_cells.c (cell_edited): fixup bad
+	code (#115784, Owen Taylor).
+
+Sat Jul 12 16:01:03 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtkcellrenderertext.c (gtk_cell_renderer_text_set_property):
+	free the old text and extra_attrs *after* we parsed the new
+	markup string. (Fixes #114485, reported by Owen Taylor).
+
+Sat Jul 12 15:51:33 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Fixes #113904, testcase provided by Rene Seindal.
+
+	* gtk/gtktreeview.c (gtk_tree_view_button_press): set
+	pressed_button to -1 when a row has been activated,
+	(gtk_tree_view_motion_bin_window): only start a drag if there's
+	a button being pressed.
+
+Sat Jul 12 15:51:18 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_real_collapse_row): use
+	gdk_window_get_pointer instead of gdk_display_get_window_at_pointer
+	to avoid a roundtrip (#110272, Owen Taylor).
+
+Sat Jul 12 15:28:26 2003  Kristian Rietveld  <kris@gtk.org>
+
+	This patch really really fixes scrolling. Related bugs: #81627,
+	testcase provided by Timo Sirainen, #111500, testcase provided by
+	manu, #113241, reported by Pedro Gimeno/Michael Natterer.
+
+	* gtk/gtktreeview.c (validate_visible_area): scrolling to a dy
+	which is equal to the lower border of the window means scrolling
+	to an invisible row, always update the dy when scrolling to an
+	invisible row, corrected area_above/below calculations for
+	invisible rows, when walking the tree correct the size
+	subtracted for invalidated rows, fix wrong logic in comment.
+
+Tue Jul  8 20:11:04 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkevents-x11.c (get_real_window)
+	gdk/x11/gdkinput-x11.c (_gdk_input_common_init)
+	gdk/x11/gdkimage-x11.c (_gdk_windowing_image_init)
+	gdk/x11/gdkprivate-x11.h (_gdk_windowing_image_init)
+	Don't assume that all events start with XEventAny - Xkb events
+	don't! (#105745). So, only do that for core events, and for
+	non-core events, add a system for registering event types
+	that start with XEventAny.
+
+	* gdk/x11/gdkevents-x11.c (gdk_event_translate):
+	Check to see if the result of gdk_window_lookup_for_display()
+	is actually a window.
+	
+Wed Jul  9 19:25:15 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gdk/gdkdisplay.c (gdk_display_get_window_at_pointer): don't
+	directly return from ->window_at_pointer, but set win_x and win_y
+	first if needed. (Fixes #110166, reported by Arno Charlet).
+
+	* gdk/gdkwindow.c (gdk_window_get_composite_drawable): change
+	function to accept GdkDrawables and not just GdkWindows. This was
+	already done in some other functions a while back, but this patch
+	got lost for some reason.
+
+2003-07-08  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkcontainer.c (gtk_container_remove): Doc addition. (#116501, Doug Quale)
+
+Sat Jul  5 09:55:38 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkevents-x11.c (gdk_event_send_client_message_to_all_recurse):
+	Somehow, a WM_STATE => _NET_WM_STATE change hand been made here.
+
+	* tests/testdnd.c (target_drag_motion): Make the trashcan
+	open again. (Got lost in deprecation cleanup.)
+
+	* gtk/gtkiconfactory.c (ensure_cache_up_to_date): Actually
+	update the icon cache serial so we don't continually
+	think we are out-of-date.
+
+2003-07-04  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkdrawable-win32.c (gdk_win32_draw_polygon,
+	gdk_win32_draw_segments, gdk_win32_draw_lines): We can calculate
+	the width and height of the bounding rectangle only after the
+	minumum x and y have been found, and need a separate loop for
+	it. Thanks to Bruce Hochstetler for providing a sample program
+	exhibiting the bug.
+
+2003-07-03  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/gdk.def: Add gdk_string_to_compound_text_for_display.
+	(#116537, Peter Zelezny)
+
+2003-07-01  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkspinbutton.c (gtk_spin_button_set_digits): Improve docs.
+	(116364, Morten Welinder)
+
+2003-07-01  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkwindow-win32.c (_gdk_windowing_window_get_pointer):
+	WindowFromPoint() wants screen coordinates (#115422, Tim Evans).
+
+2003-06-30  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkdnd-win32.c (find_window_enum_proc): New function,
+	callback proc for EnumWindows().
+	(gdk_drag_find_window_for_screen): Actually take the drag_window
+	argument into account: Instead of using WindowFromPoint(), use
+	EnumWindows(), to be able to skip the drag_window. (#116320, Tony
+	M Brown, Herman Bloggs)
+
+	* gdk/win32/*.c: Replace gdk_drawable_ref()/unref() and
+	gdk_window_ref()/unref() calls with g_object_ref()/unref().
+	Consistently use %p format in debugging output of pointers and
+	HANDLEs.
+
+2003-06-28  Tor Lillqvist  <tml@iki.fi>
+
+	Fix for #111028, thanks to J. Ali Harlow, who writes:
+	I found that the GdkPixmap->GdkImage reference really isn't
+	important. It's only really there to have somewhere convenient to
+	store the location of the pixel data in the pixmap and as an easy
+	way of accessing the dimensions of that data. I have therefore put
+	together a fix which removes this reference entirely which seems
+	to solve the problem.
+
+	* gdk/win32/gdkpixmap-win32.h (struct _GdkPixmapImplWin32):
+	Instead of a pointer to a GdkImage, keep a pointer to the pixels
+	directly.
+
+	* gdk/win32/gdkimage-win32.c (_gdk_win32_setup_pixmap_image): Remove.
+	(_gdk_win32_new_image): New function, replacing the above. Creates
+	a GdkImage without any associated GdkPixmap.
+	(gdk_image_new_bitmap, _gdk_image_new_for_depth): Use it instead.
+
+	* gdk/win32/gdkprivate-win32.h: Remove from here, too.
+
+	* gdk/win32/gdkcursor-win32.c (gdk_cursor_new_from_pixmap)
+	* gdk/win32/gdkdrawable-win32.c (blit_from_pixmap)
+	* gdk/win32/gdkgc-win32.c (_gdk_win32_bitmap_to_hrgn)
+	* gdk/win32/gdkmain-win32.c (_gdk_win32_drawable_description):
+	* gdk/win32/gdkpixmap-win32.c (gdk_pixmap_impl_win32_finalize,
+	gdk_pixmap_new, gdk_bitmap_create_from_data, gdk_pixmap_foreign_new)
+	Corresponding changes.
+
+2003-06-21  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkevents-win32.c (gdk_event_translate): When
+	emulating X11's automatic grab on button down, pass owner_events
+	as FALSE. According to the XLib spec, automatic grabs use True for
+	owner_events when OwnerGrabButtonMask is selected, and I don't see
+	the X11 backend doing that. (#82497, #91619, #92835, #107322, #110271)
+	(find_window_for_pointer_event): Improve debugging output.
+
+2003-06-17  Tor Lillqvist  <tml@iki.fi>
+
+	* gtk-zip.sh.in (DLLDIR): Look for DLLs also in the bin
+	subdirectory, where libtool 1.5 installs them.
+
+	* README.win32: Point to FSF's binary Win32 distribution of
+	gettext-runtime.
+
+2003-06-14  Arafat Medini <lumina@silverpen.de>
+
+	* configure.in: Added locale "ar" Arabic to ALL_LINGUAS.
+
+2003-06-12  Anders Carlsson  <andersca@codefactory.se>
+
+	* gtk/gtkwidget.c: (event_window_is_still_viewable):
+	Special case pixmaps. (#114880)
+	
+2003-06-12  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkwidget.c: Document child-notify and drag-data-received
+	signals. Owen, we need to figure out where the best place for
+	these comments in the source is. I currently put them in front of
+	the signals enum.
+
+2003-06-11  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkdnd.c (gtk_drag_check_threshold): s/threshhold/threshold/.
+
+Tue Jun 10 11:25:08 2003  Hidetoshi Tajima  <hidetoshi.tajima@sun.com>
+
+	* modules/input/gtkimcontextxim.c (xim_instantiate_callback): New
+	function for XIM instantiate callback.
+	* modules/input/gtkimcontextxim.c (xim_info_try_im): New function
+	where call to XOpenIM() or XRegisterIMInstantiateCallback() is
+	actually made.
+	* modules/input/gtkimcontextxim.c (xim_destroy_callback): New function
+	for XIM's destroy callback.
+	* modules/input/gtkimcontextxim.c (get_im): add a check if info->im 
+	is set or not - if it's not set, call xim_info_try_im() to try to
+	initiaize it.
+	* modules/input/gtkimcontextxim.c (reinitialize_ic): reset
+	filter_key_release flag of the context.
+	* modules/input/gtkimcontextxim.c (get_ic_real): removed
+	* modules/input/gtkimcontextxim.c (gtk_im_context_xim_get_ic): move
+	code from the removed get_ic_real().
+
+	For XIM instantiation, destruction and re-instantiation. With
+	this, Gtk+ apps will be able to connect or reconnect to the XIM,
+	when it starts after the apps, or when the XIM gets lost and recover.
+	(#113099, #107782).
+
+Mon Jun  9 16:29:51 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* === Released 2.2.2 ===
+
+	* demos/gtk-demo/Makefile.am (demos.h): srcdir != builddir fix.
+
+Mon Jun  9 16:18:11 2003  Owen Taylor  <otaylor@redhat.com>
+ 
+ 	* gtk/gtknotebook.c (gtk_notebook_button_press): Back
+ 	out event->window test - it wasn't needed because
+ 	of the call to get_widget_coordinates().
+
+ 	* gtk/gtknotebook.c (gtk_notebook_button_press): Remove
+ 	call to gtk_widget_grab_focus() when not clicking on
+ 	any tabs. (Real fix for #114534)
+ 
+Mon Jun  9 21:25:13 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeviewcolumn.c (gtk_tree_view_column_cell_get_size):
+	check if width is !null, not *width. Doh.
+
+Mon Jun  9 21:01:16 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeviewcolumn.c (gtk_tree_view_column_cell_process_action):
+	Remove the weird dx logic, get all cell_area and background_area
+	calculations right. Not sure what was up with it before. (Fixes
+	#110989, testcase from Vasco Alexandre da Silva Costa).
+
+	* NEWS: Updated for this bug.
+
+Sun Jun  8 23:43:47 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* NEWS: Updated.
+
+	* configure.in: Version to 2.2.2, interface age 2.
+
+Sun Jun  8 22:03:09 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* tests/testdnd.c: Use application/x-rootwindow-drop for
+	root window drops. (#108670, Alex Larsson)
+
+	* gdk/x11/gdkdnd-x11.c (gdk_drag_motion) gtk/gtkdnd.c (gtk_drag_drop): 
+	Accept either application/x-rootwin-drop (what GTK+ has always used)
+	or application/x-rootwindow-drop (what the XDND standard specifies).
+
+Fri Jun  6 11:07:33 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkwidget.c (event_window_still_viewable): 
+	Before delivering an event to a widget, check that
+	(if relevant), the event's window is still viewable.
+	(#105642, Dennis BjÃ¶rklund)
+
+	* gdk/gdkwindow.c (_gdk_window_destroy_hierarchy): 
+	NULL out private->parent, since after destruction
+	it might not be valid any more.
+
+	* gdk/gdkwindow.c (gdk_window_is_viewable): Fix some
+	accesses before g_return_val_if_fail(). Treat 
+	DESTROYED windows as unmapped.
+
+n Jun  8 18:59:01 2003  Soeren Sandmann  <sandmann@daimi.au.dk>
+
+	* gdk/gdkpixbuf-drawable.c (G8fromRGB565): swap G and B.
+	Fixes (#114669)
+
+Thu Jun  5 09:28:03 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkentry.c: Recompute unconditionally in
+	gtk_entry_style_set, and in a new gtk_label_screen_changed().
+	Protect the guts of recompute_idle_func() with
+	gtk_widget_has_screen(). (#114040, Morten Welinder) 
+	Fix FALSE/0 confusion.
+	
+Sun Jun  8 11:27:29 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkviewport.c (viewport_set_adjustment): Fix bug with 
+	set_adjustment (viewport, NULL);
+
+Fri Jun  6 16:25:44 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkviewport.c: Many fixes, along with extensive cleanups and 
+	refactoring of code to reduce duplication; fixes include:
+
+	- gtk_viewport_realize(): Position the window correct from adjustment 
+	values. (#110737, Michael Natterer)
+
+	- Remove some division-by-zero checks in places where there is no 
+	longer division. (#110737)
+
+	- gtk_viewport_class_init: Make the hadjustment/vadjustment properties 
+	G_PARAM_CONSTRUCT, so that there will always be adjustments, even 
+	if gtk_viewport_new isn't used (#101135, Thomas Leonard).
+
+	- Switch over to encapsulated lazy-creation for hadjustment/
+	vadjustment; even with the CONSTRUCT property, we need this after
+	destroy.
+
+	- When updating the adjustment, immediate set their values to
+	match the the current range of the viewport, and update the 
+	viewport position to match the value of the new adjustments. 
+	(Part of #1165)
+
+2003-06-06  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkprivate-win32.h: Fix typo.
+
+	* gdk/win32/gdkgc-win32.c (_gdk_win32_gc_new): Set
+	graphics_exposures and subwindow_mode, too, even if they aren't
+	currently used.
+
+Fri Jun  6 23:38:23 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (do_expand_collapse),
+	(expand_collapse_timeout), (cancel_arrow_animation): made
+	expand_collapse_timeout a wrapper with locks around	
+	do_expand_collapse, made cancel_arrow_animation use
+	do_expand_collapse. Fixes threadlock. (Fixes #111286, patch from
+	Peter Bloomfield).
+
+Fri Jun  6 11:05:45 2003  Hidetoshi Tajima  <hidetoshi.tajima@sun.com>
+
+	* modules/input/gtkimcontextxim.h (struct _GtkIMContextXIM):
+	* modules/input/gtkimcontextxim.c (preedit_start_callback,
+	preedit_draw_callback, preedit_done_callback): Add a 'finalizing' flag 
+	to keep preedit-[start,changed,end] signals from being called during
+	finalization (#111861).
+
+2003-06-05  Noah Levitt  <nlevitt@columbia.edu>
+
+	* gtk/gtknotebook.c (gtk_notebook_button_press): Ignore button
+	presses that are not on the tab (#114534).
+
+Thu Jun  5 20:35:40 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* demos/Makefile.am: Conditionalize dependencies for
+	gdk-pixbuf-csource on cross-compilation (#112391, J. Ali Harlowe). 
+
+Thu Jun  5 20:12:51 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkwindow.c (gtk_window_get_default_size): Handle
+	gtk_window_get_geometry_info() returning NULL.
+	(#107311, John Finlay)
+
+Thu Jun  5 19:24:33 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtktoolbar.c (gtk_toolbar_expose): Subtract off
+	twice the border width from the width/height, not
+	1x the border width. (#106336, Rodney Dawes)
+
+Thu Jun  5 15:33:38 2003  Owen Taylor  <otaylor@redhat.com>
+ 
+ 	* gtk/gtktextlayout.c (gtk_text_layout_move_iter_to_next_line):
+ 	If at the end of the buffer, move to the end iter -
+ 	parallels behavior of move_iter_to_previous_line.
+ 	(#81960, Padraig O'Briain)
+ 
+Thu Jun  5 16:12:54 2003  Owen Taylor  <otaylor@redhat.com>
+
+        #80023, Yao Zhang, TOKUNAGA Hiroyuki
+
+	* gtk/gtktextlayout.c (gtk_text_layout_get_cursor_locations):
+	Account for the preedit cursor offset if the iter passed
+	in is at the same place as the insertion cursor.
+
+	* gtk/gtktextview.c (gtk_text_view_get_cursor_location):
+	Encapsulate getting the insertion cursor location.
+
+	* gtk/gtktextview.c (gtk_text_view_update_im_spot_location):
+	Pass the real y/height to the IM context. Take 
+	text_view->x/yoffset into account.
+
+Thu Jun  5 16:52:54 2003  Owen Taylor  <otaylor@redhat.com>
+
+        * gtk/gtktextview.[ch]: Never scroll on focus in
+	(#81893, Patch from Paolo Maggi)
+
+	* gtk/gtktextview.c (gtk_text_view_scroll_[h]pages): 
+	Scroll to the current cursor location before handling
+	the action, in case the user just tabbed in
+	and the cursor is offscreen.
+
+Thu Jun  5 17:20:40 2003  Owen Taylor  <otaylor@redhat.com>
+	 
+	 #107883, Gustavo GirÃ¡ldez
+
+	* gtk/gtktextlayout.c (gtk_text_layout_emit_changed):
+	Split out the case where we know we changed, and 
+	already dealt with our cached line being invalidated
+	from external calls to gtk_text_layout_changed.
+
+	* gtk/gtktextlayout.c (gtk_text_layout_changed):
+	Check if the invalidate yrange intersects our
+	cached line, and clear it if necessary.
+
+2003-06-05  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkevents-win32.c (gdk_event_translate): Handle global
+	filters.
+
+2003-06-05  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextview.c: Fix for #84668, reported by Torbjörn Andersson:
+	(gtk_text_view_grab_notify): 
+	(gtk_text_view_state_changed): Implement these
+	to unobscure cursor when grab shadowed or insensitised.
+	(gtk_text_view_unobscure_mouse_cursor): New function to undo the
+	effect of gtk_text_view_obscure_mouse_cursor(). Code lifted from
+	gtk_text_view_motion_event().
+	(gtk_text_view_motion_event): Use gtk_text_view_obscure_mouse_cursor().
+
+	* gtk/gtktextview.c (select_all): New keybinding signal for
+	(un)selecting the whole buffer. Bound to C-a/C-\.  (see #107889)
+	
+	* gtk/gtktreestore.c (gtk_tree_store_new): 
+	* gtk/gtkliststore.c (gtk_list_store_new): Document restriction on 
+	types.
+
+Wed Jun  4 19:42:17 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/gdkpango.c (gdk_draw_layout_line_with_colors):
+	When drawing underlines, join up adjacent runs
+	where possible, so we don't get changes in 
+	shaper/font/etc. breaking underlines. (#103662,
+	Kang Jeong-Hee)
+
+Wed Jun  4 19:22:58 2003  Jonathan Blandford  <jrb@redhat.com>
+
+	* gtk/gtktreemodelsort.c (gtk_tree_model_sort_level_find_insert):
+	Slightly modified patch from Owen Taylor <otaylor@redhat.com> to
+	improve the speed of inserting rows into an already sorted list,
+	#109292
+
+Wed Jun  4 19:24:28 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkgc-x11.c gdk/x11/gdkprivate-x11.h: Keep
+	track of when we have a clip mask set for the GC,
+	and when we unset it, or switch to a clip region,
+	immediately call XSetClipMask (..., None) to avoid
+	Xlib caching stale data. (#111806)
+
+	* gtk/gtktextdisplay.c: Don't set a clip mask
+	when drawing alpha pixmaps; it isn't necessary any more.
+	(#111806)
+
+Wed Jun  4 18:27:44 2003  Owen Taylor  <otaylor@redhat.com>
+ 
+ 	* gtk/gtkcheckbutton.c (gtk_real_check_button_draw_indicator): 
+ 	gtk/gtkradiobutton.c (gtk_radio_button_draw_indicator): 
+ 	Use GTK_WIDGET_IS_SENSITIVE(), not GTK_WIDGET_SENSITIVE
+ 	(#92548, Tim Evans)
+ 
+ 	* gtk/gtkcheckmenuitem.c (gtk_real_check_menu_item_draw_indicator)
+ 	gtk/gtkradiomenuitem.c (gtk_radio_menu_item_draw_indicator): If
+	Use state_type = STATE_INSENSITIVE for insensitive menu items.
+ 
+Wed Jun  4 21:18:55 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_drag_begin): use a silent
+	assert for get_info. (reported by Michael Natterer),
+	(gtk_tree_view_expand_all_emission_helper),
+	(gtk_tree_view_expand_all_helper): emit row_expanded for all
+	expanded rows during an _expand_all operation. (Fixes #111280,
+	reported by Benjamin Bayart).
+
+Tue Jun  3 18:32:30 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkevents-x11.c (gdk_wm_protocols_filter): Don't
+	respond to pings on a root window; prevents infinite
+	loops if we are selecting for SubstructureNotify on the
+	root window. (#111945, Sergey V. Udaltsov)
+
+Tue Jun  3 17:39:16 2003  Owen Taylor  <otaylor@redhat.com>
+
+	#71597, reported by Morten Welinder
+
+	* gdk/gdkpixbuf-drawable.c (rgb888amsb): Fix and simplify
+	(Patch from Christian Petig)
+
+	* gdk/gdkpixbuf-drawable.c (rgb{555,565}{a,}{msb,lsb}):
+	Major rewrite of 555 and 565 conversion routines:
+
+	- Move all the bit shifting into a small block of macros,
+	  eliminating much duplication of complicated arithmetic.
+	- Get rid of 2-pixels at a time code, which was buggy,
+	  hard to maintain, caused unaligned accesses, and
+	  probably didn't actually perform any better.
+	- Simplify cases where different data types were
+	  used for the little and big endian cases, use
+	  GUINT16_SWAP_LE_BE() where appropriate.
+		
+Tue Jun  3 15:05:47 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkdrawable-x11.c (convert_to_format): Remove
+	bad optimization for src_rowstride == dest_stride.
+	(Didn't consider the case where we were copying only
+	partial widths of a wider source buffer)
+	(#113034, reported by Hans Petter Jansson)
+
+2003-06-03  Michael Natterer  <mitch@gimp.org>
+
+	* gdk/x11/gdkinput-x11.c (_gdk_input_common_find_events):
+	reenabled button_release events for xinput devices. (#113948)
+
+Mon Jun  2 18:58:54 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtknotebook.c (gtk_notebook_size_allocate): Don't
+	map the event window if the notebook isn't mapped. (#113980,
+	Richard Reich)
+
+2003-06-02  Sven Neumann  <sven@gimp.org>
+
+	* gtk/gtkprogress.c (gtk_progress_changed): added a missing cast.
+
+	* gdk/gdkrgb.c (gdk_rgb_try_colormap): removed an unused variable.
+
+2003-06-01  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkwindow.c (gtk_window_parse_geometry): Add some hints and
+	an example to the docs.  (#98427)
+
+Fri May 30 15:58:33 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* configure.in: Rework debug_default handling to work
+	with autoconf-2.5x. (#106348)
+
+Fri May 30 20:24:11 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* configure.in: added "li" to ALL_LINGUAS
+	* po/li.po: added Limburgish translation from Mathieu van Woerkom
+	<mathieu@brabants.org>
+
+Thu May 29 18:30:55 2003  Hidetoshi Tajima  <hidetoshi.tajima@sun.com>
+
+	* modules/input/imipa.c: 
+	use GETTEXT_PACKAGE to get a translation for "ipa" (#113850).
+	
+Thu May 29 18:09:57 2003  Hidetoshi Tajima  <hidetoshi.tajima@sun.com>
+
+	* gtk/gtkimmodule.c (_gtk_im_module_list):
+	use GETTEXT_PACKAGE to get a translation for "Default"(#113850).
+
+Thu May 29 09:34:05 2003  Hidetoshi Tajima  <hidetoshi.tajima@sun.com>
+
+	* gtk/gtkimmodule.c (_gtk_im_module_list): make "Default"
+	label of default input method localizable.
+	* gtk/gtkimmulticontext.c (gtk_im_multicontext_append_menuitems): 
+	use translations of input method context names
+	* modules/input/imam-et.c, modules/input/imcyrillic-translit.c,
+	  modules/input/iminuktitut.c, modules/input/imthai-broken.c,
+	  modules/input/imti-er.c, modules/input/imti-et.c
+	  modules/input/imviqr.c, modules/input/imxim.c
+	use GETTEXT_PACKAGE instead of "gtk+" for domain name.
+	(#113850).
+
+Thu May 29 18:23:01 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_button_press): put the focus
+	grab separate, the user might clear the tree in the focus-in
+	callback. (Fixes #113086, testcase from Felipe Heidrich).
+
+Thu May 29 18:06:26 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_model_set_model): reset a bunch
+	of row reference when we unset the model. Also reset
+	dy and top_row_dy. (Fixes #109289, patch from Owen Taylor).
+
+Thu May 29 17:12:19 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_set_cursor_on_cell): cancel
+	the current editing, if it exists. (Fixes #108956, reported by
+	Michael Natterer).
+
+Thu May 29 17:06:09 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (check_selection_helper): new function,
+	(gtk_tree_view_row_deleted): traverse the tree from the
+	deleted node to see whether the selection changed, instead of
+	just checking this node. (Fixes #107400, reported by 'Duncan').
+
+Thu May 29 16:31:34 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_maybe_begin_dragging_row),
+	(gtk_tree_view_drag_begin): set the DnD icon in _drag_begin
+	instead of _maybe_begin_dragging_row, so the icon can be
+	overridden by apps. (Fixes #104374, patch from Daniel Elstner).
+
+Thu May 29 16:14:04 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_start_editing): correct
+	cell_area x/width for the expander if needed. (Fixes #101748,
+	reported by Dave Cook and Mariano Suarez-Alvarez).
+
+Thu May 29 16:01:38 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* gtk/gtktreeview.c (gtk_tree_view_real_set_cursor): check
+	if tree/node are still the same after _internal_select_node.
+	(Fixes #92256, reported by edscott).
+
+Thu May 29 15:38:30 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Fixes #75745, reported by Richard Hult.
+
+	* gtk/gtktreeview.c (gtk_tree_view_bin_expose): set/unset
+	GTK_CELL_RENDERER_FOCUSED flag whether the current node is the
+	cursor or not.
+
+	* gtk/gtktreeviewcolumn.c (gtk_tree_view_column_cell_process_action):
+	if we are rendering a cursor row, and the cell the be
+	processed has focus, then set the GTK_CELL_RENDERER_FOCUSED
+	flag (else we unset it).
+
+2003-05-27  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkwindow-decorate.c: 
+	* gtk/gtktreeprivate.h: 
+	* gtk/gtkdnd.c: 
+	* gdk/win32/gdkwindow-win32.h: 
+	* gdk/linux-fb/gdkprivate-fb.h: 
+	* gdk/linux-fb/gdkkeyboard-fb.c: Remove dubious bitfields of
+	unspecified signedness.  (#112919, Morten Welinder)
+
+	* gtk/queryimmodules.c (escape_string): 
+	* gtk/gtktextbtree.c (_gtk_text_btree_get_text): 
+	* gtk/gtksettings.c (_gtk_settings_parse_convert): 
+	* gtk/gtkrc.c (gtk_rc_parse_assignment): 
+	* gtk/gtkinputdialog.c (gtk_input_dialog_set_key): 
+	* gdk/x11/gdkdisplay-x11.c (escape_for_xmessage): Replace all 
+	occurances of g_string_new ("") by g_string_new (NULL). (#106975,
+	Morten Welinder) 
+
+2003-05-27  Tor Lillqvist  <tml@iki.fi>
+
+	* gtk-zip.sh.in: Only include the Default and Emacs themes' gtkrc
+	files. Include share/gtk-doc/{gdk-pixbuf,gdk,gtk}.
+
+	* gdk/Makefile.am: libgdk-win32-2.0.la depends on
+	win32/libgdk-win32.la.
+
+	* gtk/gtk.def: Add gtk_tree_view_column_cell_get_position.
+
+2003-05-23  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkcolorsel.c (gtk_color_selection_init): Update color on
+	focus out of hex_entry.  (#112665)
+	(hex_focus_out): New signal handler for focus out of hex entry.
+	
+2003-05-22  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkfilesel.c (gtk_file_selection_create_dir): 
+	(gtk_file_selection_rename_file): Some keynav improvements for the
+	"Rename File" and "Create Directory" subdialogs: Enter in entry
+	activates default, default is "Create"/"Rename", Escape cancels
+	dialog.  (#113110)
+	(gtk_file_selection_set_filename): Add a hint about opening 
+	directories.  (#113175)
+
+Wed May 21 15:53:14 2003  Owen Taylor  <otaylor@redhat.com>
+ 
+ 	* gtk/gtkprogress.c (gtk_progress_set_format_string,
+ 	gtk_progress_set_show_text): Always queue a resize ... 
+ 	we rely on the size-allocate to do the update, plus a 
+ 	different format can actually change our size requisition.
+	(#111052, Vasco Alexandre da Silva Costa)
+ 
+	* gtk/gtkprogress.c (gtk_progress_changed): Track
+ 	::changed as well as ::value_changed, and queue a
+	resize on ::changed when necessary.
+ 
+ 	* gtk/gtkprogress.c (gtk_progress_set_adjustment): 
+ 	Call gtk_progress_changed() here to update or 
+ 	queue a resize as necessary.
+ 
+Wed May 21 14:09:52 2003  Hidetoshi Tajima  <hidetoshi.tajima@sun.com>
+
+	* gtk/gtkimcontextsimple.c: added composing rules of
+	Greek accented letters, patch by Vasilis Vasaitis (#107507)
+
+Wed May 21 12:15:34 2003  Hidetoshi Tajima  <hidetoshi.tajima@sun.com>
+
+	* gtk/gtkimcontextsimple.c:
+	code that can check the compose table for ascending order,
+	by Vasilis Vasaitis (#104862).
+
+Wed May 21 12:52:01 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkkeyhash.[ch] (_gtk_key_hash_lookup): We need 
+	to pass the unmasked state to gdk_keymap_translate_keyboard_state() 
+	to handle the case where a modifier not in the mask
+	(like Num_Lock) changes the key value, so replace
+	the masked state with a state/mask pair. (#106913,
+	Olivier Ripoll)
+
+	* gtk/gtkwindow.c gtk/gtkbinding.c: Update to pass
+	in state/mask pair to _gtk_key_hash_lookup()
+
+Tue May 20 21:59:59 2003  Hidetoshi Tajima  <hidetoshi.tajima@sun.com>
+
+	* modules/input/gtkimcontextxim.c (xim_info_display_closed):
+	fix a memory leak, free input context list (#113259).
+
+Tue May 20 17:27:24 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkimmodule.c (gtk_im_module_init): Silently
+	accept a missing gtk.immodules file, some people
+	want to run without one. (#112406, patch from
+	Arnaud Charlet)
+
+Tue May 20 17:05:31 2003  Owen Taylor  <otaylor@redhat.com>
+ 
+ 	* gtk/gtkwindow.c (gtk_window_compute_hints): Fix 
+ 	height/width confusion (#113370, Xan Lopez)
+ 
+Tue May 20 15:09:29 2003  Owen Taylor  <otaylor@redhat.com>
+ 
+ 	* gdk/x11/gdkdnd-x11.c gdk/x11/gdkwindow-x11.c: Comprehensively
+ 	zero all unused parts of client messages (Mainly Motif DND
+	and EWMH). Also, fix a couple places where we were putting
+ 	contents into Motif DND messages that didn't belong.
+ 	(#113361, EWMH problem reported by Lubos Lunak)
+	
+	* gtk/gtkselection.c (_gtk_selection_request): Handle the
+	case where the property type for the multiple atoms is
+	ATOM_PAIR by doing the conversions ourselves. This is
+	needed for Xt inter-operation.
+
+Wed May 14 18:12:45 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* autogen.sh (have_libtool): Fix some typos. (#108381,
+	Morten Welinder.)
+
+Wed May 14 16:40:09 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkframe.c (gtk_frame_set_label_widget): Patch
+	from Charles Schmidt to add missing notify (#108305)
+
+Wed May 14 16:00:51 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkgc-x11.c: Remove unecessary g_return_if_fail().
+	(#105500, Morten Welinder.)
+
+Wed May 14 09:06:59 2003    Hidetoshi Tajima <hidetoshi.tajima@sun.com>
+
+	* modules/input/gtkimcontextxim.c (get_ic_real): use type of guint32
+	instead of guint for XNFilterEvents event mask (#110493).
+
+2003-05-13  Sven Neumann  <sven@gimp.org>
+
+	* gtk/gtktreeviewcolumn.c (gtk_tree_view_column_cell_get_position):
+	fixed parameter name in inline docs.
+
+2003-05-11  Anders Carlsson  <andersca@codefactory.se>
+
+	* gtk/gtkdnd.c (gtk_drag_source_unset_icon): Don't cast a gchar to
+	a GObject. (#112762)
+
+2003-05-08  Sven Neumann  <sven@gimp.org>
+
+	* configure.in: set the HAVE_X11R6 automake conditional to false
+	if not compiling for X11.
+
+2003-05-06  Tor Lillqvist  <tml@iki.fi>
+
+	Fix for #110165 (thanks to Arnaud Charlet):
+	
+	* gdk/win32/gdkevents-win32.c (build_keypress_event,
+	build_keyrelease_event): For unshifted control char, use
+	lowercase ASCII keyval.
+	(gdk_event_translate): Similarily, when handling WM_SYSKEYDOWN and
+	UP (i.e. Alt-something), if it's an unshifted ASCII letter, use
+	lowercase keyval. Use build_key_event_state() here, too, instead
+	of minor code duplication.
+
+2003-05-06  Matthias Clasen  <maclas@gmx.de>
+
+	* tests/testmultidisplay.c: Don't include strings.h, it's not
+	needed anymore.  (#112388)
+
+	* examples/menu/itemfactory.c: 
+	* docs/tutorial/gtk-tut.sgml: Remove an unneeded include from the
+	itemfactory example.
+	
+2003-05-05  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkdnd.c (gtk_drag_source_set_icon_stock):  Actually set the
+	icon type to the stock icon type.  (#111735, Dave Bordoley)
+
+2003-05-05  Christian Rose  <menthos@menthos.com>
+
+	* configure.in: Added sr and sr@Latn to ALL_LINGUAS.
+	Removed sp, it's replaced by sr@Latn.
+
+Mon Apr 28 17:54:39 2003  Jonathan Blandford  <jrb@redhat.com>
+
+	* gtk/gtktreeview.c (gtk_tree_view_destroy): destroy the search
+	data iff the destroy func isn't NULL.
+
+Thu Apr 24 19:12:05 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* autogen.sh (have_libtool): Accept libtool-1.5. (#111480)
+
+Tue Apr 22 15:17:25 2003  Owen Taylor  <otaylor@redhat.com>
+ 
+ 	* configure.in: Only check for XFT2 if we found pango-xft
+ 	(#105692, Jon Nall)
+ 
+Tue Apr 22 15:12:19 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkwidget.c (gtk_widget_class_init): Fix PROP_HAS_FOCUS/
+	PROP_IS_FOCUS confusion. (#111333, Jody Goldberg)
+
+Mon Apr 21 19:02:16 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtksocket.c (activate_key): Fix prototype for
+	activate_key. (#108927, Jason D. Hildebrand)
+
+Mon Apr 21 18:42:51 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* demos/gtk-demo/Makefile.am demos/gtk-demo/geninclude.pl:
+	Remove geninclude.pl from CVS and don't dist it either,
+	it is generated. (#108970, Rich Kinder)
+
+Mon Apr 21 18:35:48 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkobject.h: Remove a couple of obsolete comments,
+	fix another comment. (#109737, Britton Kerin)
+
+Mon Apr 21 18:29:03 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkiconfactory.c (gtk_icon_set_unref): Free
+	the source list, not just it's contents (Patch
+	from Charles Kerr, #108243)
+
+Mon Apr 21 18:13:46 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkdnd-x11.c (gdk_window_cache_filter): Patch
+	from Alex Larsson fixing problem with restacking during
+	DND. (#108671)
+
+Mon Apr 21 15:07:29 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkdisplay-x11.c (gdk_display_keyboard/pointer_ungrab):
+	Calling XFlush() after ungrabbing, to avoid problems if
+	the app subsequently blocks on a long-running operation.
+	(#106520, reported by Rajkumar Siva)
+
+Fri Apr 18 17:42:45 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkwindow-x11.c (set_initial_hints): Add
+	SKIP_TASKBAR/SKIP_PAGER to set of properties we
+	might set on map. (#110019, problem reported
+	by Loban Rahman)
+
+Fri Apr 18 17:14:33 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/gdkevents.c (gdk_event_copy): Fix for the
+	case when gdk_event_copy() is called on a non-allocated
+	event. (#109716, reported by Rich Burridge)
+
+Fri Apr 18 16:57:44 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkdrawable-x11.c (draw_with_images/pixmaps):
+	Fix pointer arithmetic on 'void *'. (#108322)
+
+Fri Apr 18 16:31:49 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* configure.in gdk/x11/gdkdisplay-x11.c modules/input/Makefile.am:
+	Check for XAddConnectionWatch()/X11R6, and if found, disable XIM and
+	use of XAddConnectionWatch. Remove --enable-xim config option.
+	Should fix building on X11R5 (#110523, Albert Chin)
+
+Fri Apr 18 15:56:46 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkdisplay-x11.[ch] gdk/x11/gdkdrawable-x11.[ch]:
+	Patch from Morten Welinder to catch Sun servers	with a 
+	broken implementation of the RENDER extension. (#108309)
+
+Fri Apr 18 15:30:38 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkwindow-x11.c (set_text_property): Use
+	gdk_free_compound_text(), not g_free(). (#107643,
+	Michael Zucchi)
+
+Fri Apr 18 15:11:50 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkdisplay-x11.c (_gdk_display_x11_get_type)
+	gdk/x11/gdkscreen-x11.c (_gdk_screen_x11_get_type): Fix
+	wrong use of base_finalize. (#105126, Sven Neumann)
+
+Fri Apr 18 15:06:00 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/gdkwindow.c (gdk_window_constrain_size): Fix
+	'/' vs. '*' problem in aspect ration computations. (#108237)
+
+Fri Apr 18 14:15:09 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/x11/gdkdisplay-x11.c (gdk_display_open): 
+	* gdk/x11/gdkevents-x11.c (gdk_event_translate): You
+	don't get a XkbMapNotify event if you get a XkbNewKeyboardNotify 
+	event, so select for both. (#108406, Egmont Koblinger)
+
+Thu Apr 17 09:57:44 2003  Jonathan Blandford  <jrb@gnome.org>
+
+	* gtk/gtktreeview.c (validate_visible_area): remove
+	 infinite loop caused by not clearing the scroll_to_path.
+
+2003-04-14  Michael Natterer  <mitch@gimp.org>
+
+	* gtk/gtkliststore.c (gtk_list_store_move): added checks to ensure
+	that the iter is not reordered to its own position. Prevents model
+	corruption for the case that the store contains only a single item
+	(fixes bug #108387).
+
+	Unrelated:
+
+	* gtk/gtkliststore.c (gtk_list_store_insert): g_list_alloc() the
+	new list element later so we don't leak it if we decide to return
+	early.
+
+	* gtk/gtktreeselection.c (_gtk_tree_selection_internal_select_node):
+	set selection->tree_view->priv->anchor to NULL after freeing it.
+
+2003-04-13  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktreeviewcolumn.c
+	(gtk_tree_view_column_cell_get_position): Document. 
+
+Mon Apr  7 19:43:15 2003  Owen Taylor  <otaylor@redhat.com>
+
+ 	* gdk/x11/gdkdisplay-x11.c (gdk_x11_display_ungrab): Flush
+ 	after ungrabbing the server.
+ 
+	* gdk/x11/gdkimage-x11.c: Remove some no-longer-needed
+	calls to XFlush().
+
+ 	* gdk/x11/gdkwindow-x11.c (_gdk_windowing_window_at_pointer):
+ 	Use gdk_x11_display_grab/ungrab.
+
+	* gdk/x11/gdkdisplay-x11.c (gdk_display_open): Initialize
+	use_xshm to TRUE so SHM gets used when present.
+ 
+	* gdk/x11/gdkdisplay-x11.c (gdk_display_open): Initialize
+	use_xshm to TRUE so SHM gets used when present.
+ 
+2003-04-07  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkcelleditable.c, gtk/gtkfixed.c, gtk/gtktreemodel.c,
+	gtk/gtktreeselection.c, gtk/gtktreeview.c: Fix numerous
+	misspellings of possessive "its".  (#110027, Doug Quale)
+
+2003-04-03  Matthias Clasen  <maclas@gmx.de>
+
+	* demos/gtk-demo/main.c (demo_find_file): Only use files from the
+	current directory if it looks like the srcdir.  (#109357)
+
+2003-04-02  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkprogress.c (gtk_progress_get_percentage_from_value):
+	Return 0 if lower == upper.  (#109155)
+	(gtk_progress_get_current_percentage): Use
+	gtk_progress_get_percentage_from_value().
+
+2003-04-01  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkimcontext.c (gtk_im_context_focus_in): Fix docs.
+	(#109510, Noah Levitt)
+
+Mon Mar 31 13:52:13 2003  Jonathan Blandford  <jrb@redhat.com>
+
+	* gtk/gtkrbtree.c (_gtk_rbtree_reorder): null initialize reorder's
+	  members so Purify won't complain.
+
+	* gtk/gtkliststore.c (gtk_list_store_sort): ditto.
+
+Sun Mar 30 03:57:42 2003  Jonathan Blandford  <jrb@gnome.org>
+
+	* gtk/gtktreeselection.c (gtk_tree_selection_get_selected_rows):
+	fix crash.  Patch from Markus Lausser <sgop@users.sourceforge.net>
+
+2003-03-29  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkoptionmenu.c (gtk_option_menu_remove_contents): Set state
+	of labels back to normal before reparenting back.  (#102387)
+
+        Fixes for bug #56248:
+	
+	* gtk/gtknotebook.c (stop_scrolling): New function to remove the
+	timer and queue a redraw. 
+	(gtk_notebook_grab_notify): 
+	(gtk_notebook_state_changed): New functions to call stop_scrolling() 
+	if necessary.	
+	(gtk_notebook_button_release): Use stop_scrolling().
+	(gtk_notebook_draw_arrow): Fix drawing of insensitive arrows.
+
+	* gtk/gtkrange.c (stop_scrolling): New function to remove the
+	grab, remove the timer and queue a redraw.
+	(gtk_range_grab_notify): 
+	(gtk_range_state_changed): New functions to call stop_scrolling() 
+	if necessary.	
+	(gtk_range_button_release): Use stop_scrolling().
+
+	* gtk/gtkspinbutton.c (gtk_spin_button_grab_notify): 
+	(gtk_spin_button_state_changed): Redraw after stop_spinning.
+	(gtk_spin_button_stop_spinning): Reset click_child to correct the
+	drawing of the arrows.
+	(gtk_spin_button_button_release): Use a local copy of click_child,
+	since stop_spinning() resets it.
+
+	* gtk/gtknotebook.c (gtk_notebook_class_init): Add C-A-PgUp and
+	C-A-PgDown as alternatives to the A-less variants.   (#97860)
+
+2003-03-26  Sven Neumann  <sven@gimp.org>
+
+	* gtk/gtktreeview.c: rewrote the function that does node and arrow
+	prelighting, queue all redraws from here (Fixes bug #108792).
+
+2003-03-20  Guntupalli Karunakar  <karunakar@freedomink.org>
+
+	* configure.in: Added "ml" in ALL_LINGUAS
+
+Sat Mar 15 18:46:46 2003  Manish Singh  <yosh@gimp.org>
+
+	* gtk/gtkradiomenuitem.h: use GTK_DISABLE_DEPRECATED instead of
+	G_DISABLE_DEPRECATED.
+
+2003-03-14  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkevents-win32.c: Use the signed GET_X_LPARAM() and
+	GET_Y_LPARAM() to extract x and y coordinates from an LPARAM or
+	DWORD, and not the unsigned HIWORD() and LOWORD(). Systems with
+	multiple monitors can have negative coordinates on some of the
+	monitors. (partial fix for #99496, Arnaud Charlet)
+
+2003-03-13  Sven Neumann  <sven@gimp.org>
+
+	* gtk/gtkcellrendererpixbuf.c (gtk_cell_renderer_pixbuf_set_property):
+	removed redundant calls to g_object_notify().
+	(gtk_cell_renderer_pixbuf_get_size): removed redundant casts, see
+	bug #108236.
+
+	* gtk/gtktextiter.c (_gtk_text_iter_get_segment_char)
+	(_gtk_text_iter_get_segment_byte): return 0, not NULL (these
+	functions return an integer value).
+
+2003-03-13  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkevents-win32.c (gdk_event_translate): On
+	WM_MOUSEMOVE, the test whether we have actually moved (and thus
+	shouldn't generate an GDK event) moved after the call to
+	propagate() and translate_mouse_coords(). Otherwise we were
+	testing wrong values. (#108115, Allin Cottrell)
+	(gdk_event_translate): On WM_?BUTTONUP, set current_{x,y} the same
+	way as in WM_?BUTTONDOWN and WM_MOUSEMOVE.
+
+	* gdk/win32/gdkevents-win32.c (gdk_pointer_grab): if a grab cursor
+	is used, must copy the HCURSOR with CopyCursor(), as it is OK to
+	destroy the GdkCursor after calling gdk_pointer_grab(). Set the
+	cursor right away with SetCursor(), as we won't get any
+	WM_SETCURSOR messages while the mouse is captured. 
+	(gdk_display_pointer_ungrab): Correspondingly, destroy the copy
+	with DestroyCursor() when no longer used. (#108114, Allin Cottrell)
+
+	* gdk/win32/gdkevents-win32.c (gdk_event_translate): On
+	WM_SYSCHAR, return FALSE from the window procedure to prevent the
+	DefWindowProc from being called. Otherwise Windows would beep,
+	thinking you are trying to access a (nonexistent) menu when you
+	press Alt-something. Don't do this for Alt-Space,
+	though. (#107454, Martyn Russell)
+
+	* gdk/win32/gdkcursor-win32.c: Minor spacing and debug print fixes.
+
+2003-03-09  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkdrawable-win32.c (draw_segments): Don't try to
+	compensate for LineTo() not drawing the end pixel. It causes more
+	harm than benefits, see bug #81895.
+
+2003-03-08  Matthias Clasen  <maclas@gmx.de>
+
+	Bug #107664 continued:
+
+	* gdk/x11/gdkinputprivate.h: 
+	* gdk/x11/gdkinput-none.c (_gdk_input_window_none_event): Remove. 
+	(_gdk_input_other_event): Return gboolean.
+	* gdk/x11/gdkinput-xfree.c (_gdk_input_window_none_event): Remove. 
+	(_gdk_input_other_event): Return gboolean.
+	* gdk/x11/gdkinput-x11.c (_gdk_input_common_other_event): Return gboolean.
+
+	* gdk/x11/gdkevents-x11.c (gdk_event_translate): Make return_val
+	gboolean, remove pointless call to _gdk_input_window_none_event.
+
+	* gdk/win32/gdkinput-win32.[hc] (_gdk_input_other_event): Return gboolean.
+	(_gdk_input_window_none_event): Remove.
+
+	* gtk/gtktextiter.c (_gtk_text_iter_get_indexable_segment): 
+	(_gtk_text_iter_get_any_segment): 
+	(_gtk_text_iter_get_segment_byte): 
+	(_gtk_text_iter_get_segment_char): 
+	(_gtk_text_iter_get_text_line): 
+	(_gtk_text_iter_get_btree): Fix 0/NULL confusion.
+	* gdk/x11/gdkdnd-x11.c (motif_target_table_check): Return gint.
+	* gdk/win32/gdkfont-win32.c (gdk_font_equal): 
+	* gdk/linux-fb/gdkwindow-fb.c (gdk_window_get_deskrelative_origin): 
+	(gdk_window_get_origin): 
+	* gdk/linux-fb/gdkcolor-fb.c (gdk_colors_alloc): Fix 0/FALSE confusion. 
+
+2003-03-06  Matthias Clasen  <maclas@gmx.de>
+
+	* gdk/gdkrgb.c (gdk_rgb_try_colormap): Return gboolean, not gint.
+	(#107664, Morten Welinder)
+	
+	* gdk/x11/gdkwindow-x11.c (gdk_window_get_deskrelative_origin): 
+	* gdk/x11/gdkfont-x11.c (gdk_font_equal): 
+	* gdk/x11/gdkdnd-x11.c (gdk_drag_get_protocol_for_display): 
+	Fix TRUE/1 and FALSE/0 confusion.  (#107664, Morten Welinder)
+
+	* gtk/gtkeditable.c (gtk_editable_get_chars): 
+	* gtk/gtktextmark.c (gtk_text_mark_get_buffer): 
+	* gtk/gtkctree.c (gtk_ctree_find_node_ptr): 
+	* demos/gtk-demo/main.c (demo_find_file): Fix NULL/FALSE confusion
+	(#107648, Morten Welinder)
+
+2003-03-02  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/gdk.def
+	* gtk/gtk.def: Add a bunch of missing entries. Noticed by Cedric
+	Gustin.
+
+Thu Feb 27 18:03:49 2003  Manish Singh  <yosh@gimp.org>
+
+	* demos/gtk-demo/main.c
+	* demos/gtk-demo/tree_store.c
+	* gdk/x11/gdkscreen-x11.c
+	* gtk/gtkcellrenderertoggle.c
+	* gtk/gtkcolorsel.c
+	* gtk/gtkdnd.c
+	* gtk/gtkeditable.c
+	* gtk/gtkentry.c
+	* gtk/gtkmenu.c
+	* gtk/gtkmenubar.c
+	* gtk/gtkmenuitem.c
+	* gtk/gtkmenushell.c
+	* gtk/gtkrc.c
+	* gtk/gtksettings.c
+	* gtk/gtkstyle.c
+	* gtk/gtktextbuffer.c
+	* gtk/gtktextview.c
+	* gtk/gtktreeviewcolumn.c
+	* tests/testgtk.c
+	* tests/testtext.c
+	* tests/testtreeedit.c
+	* tests/testtreefocus.c
+	* tests/testtreeview.c: remove unnecessary G_OBJECT() casts.
+
+Tue Feb 25 21:55:17 2003  Jonathan Blandford  <jrb@redhat.com>
+
+	* gtk/gtkoptionmenu.c (gtk_option_menu_position): account for RTL
+	code.
+
+2003-02-24  Sven Neumann  <sven@gimp.org>
+
+        * gtk/gtkmain.c (gtk_get_default_language): fixed documentation.
+
+2003-02-20  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextbtree.c (_gtk_text_line_previous_could_contain_tag): 
+	Check if line_ancestor_parent is NULL.  (#102711, Manuel Clos)
+
+	* gtk/gtktextview.c (gtk_text_view_scroll_to_iter): 
+	(gtk_text_view_update_adjustments): Make sure cursor stays visible
+	during horizontal scrolling.  (#75270)
+
+2003-02-19  Matthias Clasen  <maclas@gmx.de>
+
+	* gdk/gdkkeys.c (gdk_keymap_class_init): Associate the
+	keys_changed virtual function with the keys_changed signal.
+	(#106512, Jeff Franks)
+
+2003-02-15  Larry Ewing  <lewing@ximian.com>
+
+	* gdk/gdkevents.c (gdk_event_copy): copy the event axes as well.
+
+2003-02-17  Mohammad DAMT  <mdamt@bisnisweb.com>
+
+	* po/id.po: Added Indonesian translation
+	* configure.in: Added "id" to ALL_LINGUAS
+
+2003-02-14  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextview.c (popup_targets_received): Remove bogus
+	GTK_OBJECT cast. Hopefully got it right now...
+	(gtk_text_view_move_cursor_internal): Add a default: to avoid
+	compiler warnings.
+
+2003-02-14  Glynn Foster  <glynn.foster@sun.com>
+
+	* gtk/gtktextview.c: (popup_targets_received): Use g_signal_connect
+	instead of gtk_signal_connect.
+
+2003-02-12  Christian Rose  <menthos@menthos.com>
+
+	* configure.in: Added "yi" to ALL_LINGUAS.
+
+2003-02-12  Matthias Clasen  <maclas@gmx.de>
+
+	Fix for #78216:
+
+	* gtk/gtktextview.c (delete_cb): 
+	(select_all_cb): New callbacks for context menu items.
+	(popup_targets_received): Add "Delete" and "Select All" to context
+	menu.
+
+	* gtk/gtkentry.c (gtk_entry_delete_cb): New callback for "Delete"
+	context menu item.
+	(popup_targets_received): Add "Delete" to context menu.
+	
+2003-02-09  Tor Lillqvist  <tml@iki.fi>
+
+	* gtk/gtkfilesel.c (win32_gtk_add_drives_to_dir_list): Use
+	GetDriveType() to recognize removable drives (in order to avoid
+	hanging if trying to access an empty floppy drive), instead of
+	hardcoding A: and B: (#105654).
+
+2003-02-09  Christian Rose  <menthos@menthos.com>
+
+	* configure.in: Removed "en@IPA" from ALL_LINGUAS.
+
+2003-02-06  Matthias Clasen  <maclas@gmx.de>
+
+	* gdk/x11/gdkvisual-x11.c (gdk_visual_get_best_with_depth): Return
+	a GdkVisual *, not a GdkVisual **.  (#105243)
+
+Sun Feb  2 10:03:24 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* === Released 2.2.1 ===
+
+	* configure.in: Version 2.2.1, Binary age 201, interface age 1.
+	
+	* NEWS: More updates.
+
+2003-02-01  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/gdk.def: Add gdk_screen_get_system_visual. Noticed by Ed
+	Woods.
+
+Fri Jan 31 17:48:53 2003  Manish Singh  <yosh@gimp.org>
+
+        * demos/pixbuf-demo.c
+        * demos/testpixbuf.c
+        * demos/gtk-demo/pixbufs.c
+	* tests/testtext.c: sync with HEAD (removed gtk_timeout_* usage)
+
+Fri Jan 31 17:23:59 2003  Manish Singh  <yosh@gimp.org>
+
+	* gtk/gtknotebook.c (gtk_notebook_remove_tab_label): set_state
+	on the tab_label before unparenting it, in case the unparent
+	drops the refcount to 0.
+
+Thu Jan 30 23:44:52 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* NEWS: Updates.
+
+Fri Jan 31 00:28:18 2003  Kristian Rietveld  <kris@gtk.org>
+
+	* NEWS: beginning of NEWS for 2.2.1.
+
+Thu Jan 30 23:48:30 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeviewcolumn.c (_gtk_tree_view_column_count_special_cell):
+	only count the special cell if it is also visible,
+	(_gtk_tree_view_column_get_neighbor_sizes): only take the width into
+	account from visible cells,
+	(gtk_tree_view_column_cell_get_position): likewise, (Reported and
+	testcase provided by Vasco Alexandre da Silva Costa, via IRC,
+	tracking bug was #104563).
+	
+Thu Jan 30 23:46:15 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeviewcolumn.c (gtk_tree_view_column_cell_process_action):
+	subtract expander space and focus line space from the extra space
+	we are about the allocate. (Fixes #104635).
+
+Thu Jan 30 23:42:03 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtkstyle.c (apply_affine_on_point): fix rouding error
+	(Fixes #96242, patch from Soeren Sandmann).
+
+Thu Jan 30 16:54:29 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtknotebook.c: Patch from Soeren Sandmann
+	to update the states of the tab label child
+	widgets to match the state of the tabs. 
+	(#93389, Reported by Tommi Komulainen)
+
+2003-01-30  Daniel Elstner  <daniel.elstner@gmx.net>
+
+	Merge from HEAD.
+
+	* gtk/gtktoolbar.c (set_child_packing_and_visibility): New helper
+	function that sets the icon's and label's packing options and
+	visibility based on toolbar->style.
+
+	(gtk_toolbar_internal_insert_element):
+	(gtk_real_toolbar_style_changed): Make use of
+	set_child_packing_and_visibility() to clean up the code and get
+	the packing right for icon-only/text-only toolbars. (#104679)
+
+	(get_first_child): Remove, and use gtk_bin_get_child() instead.
+
+Thu Jan 30 16:30:54 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* Makefile.am (EXTRA_DIST): Remove gtk+.spec.in from
+	EXTRA_DIST, and from dist rules. (#102231)
+
+Thu Jan 30 16:01:29 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/gdkrgb.c (gdk_rgb_try_colormap): Remove the 
+	attempt-to-allocate then free code. To handle multiple
+	people allocating colors at the same time, we need
+	to just go ahead and try. (#102213, Shivram U)
+	
+2003-01-30  Daniel Elstner  <daniel.elstner@gmx.net>
+
+	Merge from HEAD.
+
+	* gtk/gtkcolorsel.c (palette_paint): Explicitely draw an opaque
+	rectangle using the background color rather than relying on
+	gdk_window_clear_area(), so that the palette works properly with
+	pixmap themes. (#101732)
+
+	* demos/gtk-demo/colorsel.c: Install an "expose_event" handler
+	to fill the drawing area in the background color.
+
+Wed Jan 29 14:11:21 2003  Hidetoshi Tajima  <hidetoshi.tajima@sun.com>
+
+	* modules/input/gtkimcontextxim.c (choose_better_style): fix a memory
+	initialization error for selecting input style (#103549).
+
+Wed Jan 29 17:02:41 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gdk/gdkkeyuni.c (get_decimal_char): Make the 
+	translation of GDK_KP_Decimal dependent on LC_NUMERIC.
+	(#101225)
+
+Wed Jan 29 15:43:56 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtkmenushell.c (gtk_real_menu_shell_move_current):
+	Make up from the menu bar go to the end of the submenu.
+	(#96114, Ian Peters.)
+
+	* gtk/gtkmenuitem.c (gtk_menu_item_mnemonic_activate): 
+	Only do the select-but-not-activate stuff if the
+	menu is already active. Otherwise, just activate.
+	(#101690, Arvind Samptur)
+
+Tue Jan 28 15:18:24 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* autogen.sh (have_automake): Fix version in complaint
+	message about automake. (#104366, Rich Burridge)
+
+Mon Jan 27 16:38:13 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* configure.in: Remove SOEXT stuff; it doesn't work portably.
+
+Mon Jan 27 22:45:15 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreestore.c (gtk_tree_store_move): don't handle b if
+	we appended/prepended, send the rows_reordered signal to the 
+	correct level ... (Reported by Matthew Tuck).
+
+Mon Jan 27 22:43:11 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreestore.c (gtk_tree_store_sort_helper): don't just bail
+	out if the level only has one item, recurse over the child if there
+	is one. (Fixes #100458, reported by GaÃ«l Le Mignot).
+
+Mon Jan 27 22:41:26 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeview.c (gtk_tree_view_set_model),
+	(gtk_tree_view_search_equal_func): make TreeView search handle
+	all types which are transformable by GValue. (Fixes #99803, reported
+	by Muktha Narayan).
+
+Mon Jan 27 22:39:25 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeviewcolumn.c (gtk_tree_view_column_set_sort_column_id):
+	*really* handle unsetting the ID. Slightly modified patch from
+	Soeren Sandmann. Fixes #87556, reported by Jarek Dukat.
+
+Mon Jan 27 22:33:43 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	Fixes the total GtkTreeSortable mess, and #83195, reported by
+	Jarek Dukat
+
+	* gtk/gtktreestore.c (gtk_tree_store_get_sort_column_id),
+	(gtk_tree_store_set_sort_column_id), (gtk_tree_store_set_sort_func),
+	(gtk_tree_store_set_default_sort_func): use the constant
+	GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID instead of -1, make functions
+	work as advertised by the documentation.
+
+	* gtk/gtklistore.c (gtk_list_store_get_sort_column_id),
+	(gtk_list_store_set_sort_column_id), (gtk_list_store_set_sort_func),
+	(gtk_list_store_set_default_sort_func): likewise.
+
+	* gtk/gtktreemodelsort.c (gtk_tree_model_set_sort_column_id),
+	(gtk_tree_model_set_sort_func),
+	(gtk_tree_model_sort_set_default_sort_func): make functions work
+	as advertised by the documentation.
+
+Mon Jan 27 22:31:56 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeview.c (gtk_tree_view_button_press): update focus_column
+	before we decide if we edit. (fixes #100973, reported by Dave Cook).
+
+Mon Jan 27 22:29:30 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	Bug report and test case from Paolo Maggi via IRC.
+
+	* gtk/gtkliststore.c (gtk_list_store_swap): update tail if needed,
+	(gtk_list_store_move): update tail if needed.
+
+Mon Jan 27 16:19:59 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtksocket.c (gtk_socket_filter_func): event->any.window
+	might be NULL. Use gtk_widget_get_display (widget) 
+	(#102860, Thomas Leonard)
+
+Mon Jan 27 15:58:31 2003  Owen Taylor  <otaylor@redhat.com>
+ 
+ 	* configure.in: Fix --without-modules/--disable-modules
+ 	confusion that was causing --disable-modules not to work.
+ 	(#102865, Akira Tagoh)
+ 
+ 	* configure.in: Fix problem with plain --with-xinput
+ 	(#104266, Akira Tagoh)
+	
+2003-01-24  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextview.c (gtk_text_view_move_cursor_internal): Make
+	move bindings viewport-based when the cursor is invisible.  (#78669)
+
+2003-01-23  Daniel Elstner  <daniel.elstner@gmx.net>
+
+	Merge from HEAD.
+
+	* gtk/gtktoolbar.c (gtk_toolbar_hide_all): Override hide_all
+	in addition to show_all in order to keep them symmetric. (#102201)
+
+2003-01-22  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkpixmap-win32.c (gdk_pixmap_foreign_new_for_display,
+	gdk_pixmap_lookup, gdk_pixmap_lookup_for_display): Implement.
+	(#104108, Naofumi Yasufuku)
+
+	* gdk/gdk.def: Export the above.
+
+Wed Jan 22 14:23:23 2003  Manish Singh  <yosh@gimp.org>
+
+        * gdk/x11/gdkevents-x11.c (translate_key_event): add a "return" at
+        the end of the function, so there is a statement following the "out"
+        label in all cases (fixes #101961)
+
+2003-01-22  Christian Rose  <menthos@menthos.com>
+
+	* configure.in: Added "mn" to ALL_LINGUAS.
+
+Wed Jan 15 17:02:18 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtktextlayout.c (gtk_text_layout_validate_yrange):
+	Fix off-by-one error on the backward iteration loop,
+	that was causing the wrong range to be redrawn.
+	(at least part of #72734)
+
+2003-01-21  Matthias Clasen  <maclas@gmx.de>
+
+	Merge from HEAD.
+
+	* gtk/gtktextview.c (gtk_text_view_size_allocate): Adjust the
+	vadjustment value after changing its bounds.  (fixes #101963 and 
+	#73562)
+
+	* gtk/gtkcolorsel.c (hex_changed): Fix clamping to [0,1] to avoid 
+	unnecessary roundtrip failures.  (#93500)
+
+2003-01-20  Pablo Saratxaga  <pablo@mandrakesoft.com>
+
+	* configure.in: Added Amharic (am), Macedonian (mk)
+	and Tamil (ta) to ALL_LINGUAS
+
+2003-01-19  Tor Lillqvist  <tml@iki.fi>
+
+	Fix for #103614 and some other problems with GtkFileSelection on
+	Windows:
+		
+	* gtk/fnmatch.c (get_char): Need to use g_unichar_tolower(), not
+	g_ascii_tolower(). Windows file names are case-insensitive for all
+	Unicode letters.
+
+	* gtk/gtkfilesel.c: Instead of checking for G_OS_WIN32 or
+	G_WITH_CYGWIN, check G_PLATFORM_WIN32. Move inclusion of gtkintl.h
+	earlier, as it includes config.h unconditionally, and gtkprivate.h
+	redefines GTK_LOCALEDIR.
+	(struct _CompletionDirSent): Ifdef out the fields not used on
+	Windows.
+	(compare_utf8_filenames, compare_sys_filenames): Need different
+	comparison implementation for UTF-8 file names and system locale
+	file names on Win32. Cannot simply use g_ascii_strcasecmp(), but
+	need to casefold all Unicode letters.
+	(cmpl_completion_matches, open_dir, correct_parent): Ifdef out
+	variables not used on Win32 to avoid warnings about unused
+	variables.
+	(open_ref_dir): Use g_path_skip_root() to skip past potential
+	drive letter in front of the leading (back)slash.
+	(open_new_dir): Ifdef out use of CompletionDirSent fields not
+	there on Win32.
+	(correct_parent): Bypass inode check also on Cygwin.
+
+2003-01-15  Tor Lillqvist  <tml@iki.fi>
+
+	Fix bug noticed by Alex Shaduri: Tooltips and other
+	GDK_WINDOW_TEMP windows were activated. This looked very odd, and
+	was a regression from earlier versions.
+	
+	* gdk/win32/gdkwindow-win32.c (show_window_internal): Fine-tune
+	behaviour. Don't ever activate GDK_WINDOW_TEMP windows.
+	(gdk_window_move, gdk_window_resize): Add debug logging.
+
+	* gdk/win32/gdkevents-win32.c (gdk_event_translate): When we get a
+	WM_SIZE message for a non-visible (withdrawn) window, don't clear
+	the GDK_WINDOW_STATE_WITHDRAWN bit. The window is still withdrawn
+	even if its size changes.
+
+Wed Jan 15 15:55:47 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtksettings.c: Set the double click speed from
+	XSETTINGS when creating a new GtkSettings object
+	as well as when getting a notify. (#103601, reported
+	by Louis Garcia)
+
+Wed Jan 15 14:56:09 2003  Owen Taylor  <otaylor@redhat.com>
+
+	* gtk/gtknotebook.c (gtk_notebook_size_allocate): 
+	Show/hide the notebook event window as necessary,
+	we weren't previously keeping the visibility updated
+	properly.  (#103599)
+
+2002-12-29  Murray Cumming  <murrayc@usa.net>
+
+	Fixes #102168. Merge from HEAD.
+
+	* gtk/gtkliststore.c, gtktreednd.c, gtktreestore.c:
+	Actually implement the GtkTreeDragSource::row_draggable virtual 
+	function in GtkListStore and GtkTreeStore instead of just checking 
+	whether it's implemented at all. This means that DnD isn't broken by
+	gtkmm's virtual function wrappers. The alternative would be to
+	hard-code the TRUE return value into gtkmm's wrappers, but that's 
+	part of GTK+'s implementation, not it's API.
+
+Tue Jan 14 23:54:02 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeview.c: fix compiler warning.
+
+Tue Jan 14 23:29:00 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtkcellrendererpixbuf.c (gtk_cell_renderer_pixbuf_render):
+	make sure exposed pixbufs are clipped to the exposed area before
+	drawing, which is a slight speedup. (#102379, patch from Soeren
+	Sandmann).
+
+Tue Jan 14 23:26:41 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeview.c (validate_visible_area): silly typo fix,
+	only free scroll_to_path when the complete tree has been validated.
+	This makes sure that we scrolled to the correct path.
+
+Tue Jan 14 23:25:32 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeview.c (gtk_tree_view_style_set): update the
+	background of widget->window and bin->window. (Fixes #96650, reported
+	by Dave Camp).
+
+Tue Jan 14 23:24:02 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeview.c (gtk_tree_view_clamp_node_visible): process
+	updates before scrolling, avoiding a "selection streak". (Fixes
+	#101235, patch from Soeren Sandmann).
+
+Tue Jan 14 23:22:13 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeview.c (validate_visible_area): actually put values
+	in the requisition using gtk_widget_size_request. (Fixes #100172,
+	reported by Kjartan Maraas).
+
+Tue Jan 14 23:19:45 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeview.c (gtk_tree_view_rows_reordered): cancel the
+	arrow animation timeout before we actually reorder the rbtree. If
+	we don't do this we can get stuck arrows,
+	(cancel_arrow_animation): new function. (Fixes #93629, part 2,
+	reported and testcase provided by Hans Petter Jansson).
+
+Tue Jan 14 23:18:21 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeselection.c (gtk_tree_selection_real_modify_range):
+	anchor_path should be start_path, not end_path. (Fixes #102618,
+	patch from Carlos Garnacho Parro).
+
+Tue Jan 14 23:16:15 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtkliststore.c (gtk_list_store_move): also update the tail,
+	only correct new_pos if we don't move to the head/tail.
+
+Tue Jan 14 23:11:55 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreestore.c (gtk_tree_store_swap): take the path from
+	the parent_iter if depth >= 1, so we send the reordered signal to
+	the correct level, remove debugging printfs which I forgot the remove
+	earlier (2.2.0 shipped with this, oops). (Fixes #103198, Reported and
+	testcase provided by Matthew Tuck).
+
+Tue Jan 14 20:58:44 2003  Kristian Rietveld  <kris@gtk.org>
+
+	Merge from HEAD.
+
+	* gtk/gtktreeview.c (invalite_last_column): split out actual column
+	invalidation into invalite_column(),
+	(gtk_tree_view_size_allocate_columns): invalidate column if the
+	new width is larger than the old width.
+	(fixes #102890, reported by Alex Duggan).
+
+2003-01-12  Tor Lillqvist  <tml@iki.fi>
+
+	* gtk/gtkmain.c: Move inclusion of config.h and gtkintl.h earlier,
+	as gtkprivate.h redefines GTK_LOCALEDIR on Win32, for run-time
+	lookup.
+
+	* gdk/Makefile.am (libgdk_win32_2_0_la_DEPENDENCIES): Depend on
+	gdk.def.
+
+	* gdk/gdk.def
+	* gtk/gtk.def: Add some missing entries. Thanks to Kenichi SUTO.
+
+2003-01-09  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkwindow-win32.c (gdk_window_set_skip_taskbar_hint):
+	Implement by setting or clearing the WS_EX_TOOLWINDOW extended
+	window style.
+	(gdk_window_set_type_hint): Add all cases to the switch (not all
+	do anything, though). Handle GDK_WINDOW_TYPE_HINT_TOOLBAR by
+	calling gdk_window_set_skip_taskbar_hint(). This means that GTK
+	won't know that the skip_taskbar hint is on for the window, is
+	this bad?
+
+Wed Jan  8 18:44:21 2003  Manish Singh  <yosh@gimp.org>
+	
+	* gdk/x11/gdkdisplay-x11.c: #include <stdlib.h> for putenv,
+	<string.h> for strlen.
+
+	* gdk/x11/gdkscreen-x11.c: #include <stdlib.h> for getenv,
+	<string.h> for strrchr.
+
+	* tests/testgtk.c (create_saved_position): "x" and "y" properties
+	for widgets no longer exist, use gtk_window_move instead.
+
+	* test/testtextbuffer.c (check_get_set_text): cast strlen to
+	int for g_error.
+
+2003-01-05  Tor Lillqvist  <tml@iki.fi>
+
+	* gtk-zip.sh.in: Use correct DLL and import library names, with
+	GTK_API_VERSION in name, not GTK_MAJOR_VERSION.GTK_MINOR_VERSION.
+	(DEVZIP): Add bin/{gdk-pixbuf-query-loaders,gtk-query-immodules-2.0,
+	gtk-demo}.exe and share/gtk-2.0.
+
+	* configure.in: Improve check for dimm.h.
+
+	* configure.in: Set SOEXT to 'so' on Unix, 'dll' on Win32. Used in
+	gdk-pixbuf/Makefile.am.
+
+	* gdk-pixbuf/makefile.mingw.in
+	* gdk-pixbuf/pixops/makefile.mingw.in
+	* gdk/makefile.mingw.in
+	* gdk/win32/makefile.mingw.in
+	* gtk/makefile.mingw.in: Remove. Not maintained anyway.
+
+	* gdk-pixbuf/Makefile.am
+	* gdk-pixbuf/pixops/Makefile.am
+	* gdk/Makefile.am
+	* gdk/win32/Makefile.am
+	* gtk/Makefile.am
+	* configure.in: Remove makefile.mingw{,.in} from here, too.
+	
+	* README.win32: Updates. Don't mention the now removed
+	makefile.mingw files.
+
+	* gdk/gdk.def
+	* gtk/gtk.def: Add a couple of missing entries.
+
+	* gdk/gdkkeynames.c: Include <string.h> for strcmp() and memcpy().
+
+	* gdk/win32/gdkevents-win32.c: Move dimm.h header clash workaround
+	earlier.
+
+	* gdk/win32/rc/Makefile.am: Add hack to help
+	build/win32/lt-compile-resource decide which kind of libtool
+	object file to produce.
+
+2003-01-05  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextview.c (gtk_text_view_move_cursor_internal): Make
+	C-Down step through the sequence of paragraph ends (old behaviour
+	included paragraph starts).  (#80340, patch by Narayana Pattipati)
+
+	* gtk/gtktextiter.c (_gtk_text_btree_get_iter_at_first_toggle):
+ 	Check for a tag toggle at the start iterator before calling
+ 	gtk_text_iter_forward_to_tag_toggle().  (#102090, patch by Daniel 
+	Elstner)
+
+2003-01-04  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkfilesel.h (struct _GtkFileSelection): Add /*< public >*/
+	and /*< private >*/ as appropriate.  (#97211)
+
+2003-01-04  Tor Lillqvist  <tml@iki.fi>
+
+	* Makefile.am (EXTRA_DIST): Don't distribute gtk-zip.sh, but do
+	distribute gtk-zip.sh.in.
+
+	* gtk-zip.sh.in (DEVZIP): Add gdk-pixbuf-csource.exe and .1.
+
+2003-01-02  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtkwindow.c (gtk_window_get_focus): Document that it may
+	return NULL.  (#102069)
+
+2003-01-01  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/fnmatch.c (FNMATCH_TEST_CASES): #undef, since having
+	a main() in the library is obviously bad. 
+
+2002-12-27  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextview.c (gtk_text_view_drag_data_received): Place the
+	cursor at drop point.  (#72384)
+	(gtk_text_view_size_allocate): Update the horizontal adjustment
+	value.  (#75694)
+
+2002-12-25  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextdisplay.c (gtk_text_layout_draw): Fix highlighting of
+	selection wrt. to empty lines.  (#90435, #90582, #91619)
+
+	* gtk/gtktextview.c (gtk_text_view_preedit_changed_handler):
+	Keep the cursor on screen.  (#96929)
+
+2002-12-24  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextbuffer.c (paste_from_buffer): 
+	(clipboard_text_received): Let the user action span the insertion
+	and the deletion of the old selection.  (#82844)
+
+2002-12-23  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextiter.c (gtk_text_iter_backward_sentence_starts):
+	Don't call gtk_text_iter_backward_sentence_start() if
+	count is zero.  (#99115)
+
+	* gtk/gtktextview.c (gtk_text_view_move_cursor_internal): Call
+	move_cursor() even if the cursor hasn't moved, since it has the
+	side effect of canceling the selection.  (#81395, #98537, #98333)
+
+2002-12-22  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextlayout.c (add_preedit_attrs): Don't add attributes
+	with empty ranges.  (fixes #101564 and #80637)
+
+2002-12-21  Tor Lillqvist  <tml@iki.fi>
+
+	* gdk/win32/gdkwindow-win32.c (gdk_window_new): Move the code that
+	sets the window style and extended window style, and adjusts the
+	width and height to take the window decorations into account
+	earlier. The adjusted width and height used to be ignored. Remove
+	the local x, y, width and height variables, no need to further
+	confuse the code by having local copies. (Partial fix, I hope, for
+	#101588)
+
+	(gdk_window_move): When moving top-level windows, take title bar
+	and border width into account, offsetting the coordinates before
+	calling SetWindowPos().
+
+	(gdk_window_set_decorations, gdk_window_set_functions):
+	Reimplement, taking into account the peculiar semantics of
+	GDK_DECOR_ALL and GDK_FUNC_ALL. (#79036)
+
+	(gdk_window_get_decorations): Implement. (#98981)
+	
+	(gdk_window_set_type_hint): When setting
+	GDK_WINDOW_TYPE_HINT_MENU, call	gdk_window_set_decorations().
+	(#79036)
+
+	* gdk/gdk.def: Add gdk_window_get_decorations. (#98981)
+
+2002-12-21  Matthias Clasen  <maclas@gmx.de>
+
+	* gtk/gtktextview.c (gtk_text_view_set_background): New static
+	function to set the background of all windows.
+	(gtk_text_view_style_set): Use gtk_text_view_set_background().
+	(gtk_text_view_state_changed): New function; change background
+	according to state.  (#88126)
+
+2002-12-21  Havoc Pennington  <hp@pobox.com>
+
+	* gtk/gtktextview.c (gtk_text_view_move_visually): fix the documentation
+

@@ -1,0 +1,33 @@
+--- gdkwindow-win32.c.orig	2005-07-21 13:37:22.000000000 +1000
++++ gdkwindow-win32.c	2005-07-21 13:46:26.000000000 +1000
+@@ -1586,8 +1586,6 @@
+ gdk_window_set_title (GdkWindow   *window,
+ 		      const gchar *title)
+ {
+-  char *mbtitle;
+-
+   g_return_if_fail (window != NULL);
+   g_return_if_fail (GDK_IS_WINDOW (window));
+   g_return_if_fail (title != NULL);
+@@ -1604,9 +1602,18 @@
+       /* As the title is in UTF-8 we must translate it
+        * to the system codepage.
+        */
+-      mbtitle = g_locale_from_utf8 (title, -1, NULL, NULL, NULL);
+-      API_CALL (SetWindowText, (GDK_WINDOW_HWND (window), mbtitle));
+-      g_free (mbtitle);
++      if (G_WIN32_HAVE_WIDECHAR_API ())
++        {
++	  wchar_t *wtitle = g_utf8_to_utf16 (title, -1, NULL, NULL, NULL);
++	  API_CALL (SetWindowTextW, (GDK_WINDOW_HWND (window), wtitle));
++	  g_free (wtitle);
++	}
++      else
++	{
++	  char *ltitle = g_locale_from_utf8 (title, -1, NULL, NULL, NULL);
++	  API_CALL (SetWindowTextA, (GDK_WINDOW_HWND (window), ltitle));
++	  g_free (ltitle);
++        }
+     }
+ }
+ 

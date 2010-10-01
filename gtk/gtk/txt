@@ -1,0 +1,41 @@
+gtkbutton.c:  return g_object_new (GTK_TYPE_BUTTON, "label", label, NULL);
+gtkbutton.c-                       "label", stock_id,
+gtkbutton.c-                       "use-stock", TRUE,
+gtkbutton.c-                       "use-underline", TRUE,
+gtkbutton.c:  return g_object_new (GTK_TYPE_BUTTON, "label", label, "use-underline", TRUE,  NULL);
+gtkcellrenderertext.c-			"has-frame", FALSE,
+gtkcheckbutton.c:  return g_object_new (GTK_TYPE_CHECK_BUTTON, "label", label, NULL);
+gtkcheckbutton.c:  return g_object_new (GTK_TYPE_CHECK_BUTTON, "label", label, "use-underline", TRUE, NULL);
+gtkclipboard.c-      g_object_set_data (G_OBJECT (display), "gtk-clipboard-list", clipboards);
+gtkclipboard.c-      g_signal_connect (display, "closed",
+gtkclist.c-			"n-columns", columns,
+gtkfilesel.c-				   "visible", TRUE,
+gtkfilesel.c-				   "parent", list_hbox,
+gtkfilesel.c-				   "border_width", 0,
+gtkframe.c:  return g_object_new (GTK_TYPE_FRAME, "label", label, NULL);
+gtkhscale.c:  return g_object_new (GTK_TYPE_HSCALE, "adjustment", adjustment, NULL);
+gtkhscale.c-                        "adjustment", adj,
+gtkhscrollbar.c-			     "adjustment", adjustment,
+gtkimmodule.c-  module->path = g_strdup ("./");
+gtkimmodule.c-  module->path = g_strdup ("./");
+gtkimmodule.c-	      g_warning ("Error parsing context info in '%s'\n  %s", 
+gtkinvisible.c:  return g_object_new (GTK_TYPE_INVISIBLE, "screen", screen, NULL);
+gtklayout.c-			 "hadjustment", hadjustment,
+gtklayout.c-			 "vadjustment", vadjustment,
+gtkmenu.c-						   "type", GTK_WINDOW_POPUP,
+gtkmenu.c-						   "child", menu,
+gtkmenu.c-				     "signal::event", gtk_menu_window_event, menu,
+gtkmenu.c-				     "signal::size_request", gtk_menu_window_size_request, menu,
+gtkmessagedialog.c-			 "message-type", type,
+gtkmessagedialog.c-			 "buttons", buttons,
+gtkradiobutton.c:  radio_button = g_object_new (GTK_TYPE_RADIO_BUTTON, "label", label, NULL) ;
+gtkradiobutton.c:  radio_button = g_object_new (GTK_TYPE_RADIO_BUTTON, "label", label, "use-underline", TRUE, NULL);
+gtksettings.c-      g_object_set_data (G_OBJECT (screen), "gtk-settings", settings); 
+gtktextbuffer.c:  text_buffer = g_object_new (GTK_TYPE_TEXT_BUFFER, "tag_table", table, NULL);
+gtktexttag.c:  tag = g_object_new (GTK_TYPE_TEXT_TAG, "name", name, NULL);
+gtktogglebutton.c:  return g_object_new (GTK_TYPE_TOGGLE_BUTTON, "label", label, NULL);
+gtktogglebutton.c:  return g_object_new (GTK_TYPE_TOGGLE_BUTTON, "label", label, "use-underline", TRUE, NULL);
+gtktreeview.c:  return g_object_new (GTK_TYPE_TREE_VIEW, "model", model, NULL);
+gtkvscale.c:  return g_object_new (GTK_TYPE_VSCALE, "adjustment", adjustment, NULL);
+gtkvscale.c-                        "adjustment", adj,
+gtkvscrollbar.c-			     "adjustment", adjustment,

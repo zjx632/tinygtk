@@ -1,0 +1,28 @@
+CFLAGS = -O2 -march=athlon-xp
+GLIB = -I. -I.. -I../.. -I ../../glib -I ../../glib/glib -I ../../glib/gmodule -I ../../gettext-0.10.40/intl -I ../../pango -I ../gdk-pixbuf -DG_DISABLE_CHECKS -DHAVE_CONFIG_H -DINSIDE_GDK_WIN32 -DGDK_VERSION=\"2.2\" -DG_DISABLE_CAST_CHECKS -DGDK_COMPILATION -DG_LOG_DOMAIN=\"Gdk\"
+CC = gcc
+OBJ =\
+gdk.o                gdkevents.o    gdkpango.o            gdkrgb.o \
+gdkcolor.o           gdkgc.o        gdkpixbuf-drawable.o  gdkscreen.o \
+gdkcursor.o          gdkglobals.o   gdkpixbuf-render.o    gdkselection.o \
+gdkdisplay.o         gdkimage.o     gdkpixmap.o           gdkvisual.o \
+gdkdisplaymanager.o  gdkkeynames.o  gdkpolyreg-generic.o  gdkwindow.o \
+gdkdraw.o            gdkkeys.o      gdkrectangle.o \
+gdkenumtypes.o       gdkkeyuni.o    gdkregion-generic.o \
+
+all: gdk-win32-2.2s.a
+
+gdk-win32-2.2s.a: $(OBJ)
+	ar cru gdk-win32-2.2s.a $(OBJ) $(OBJJ) \
+win32/gdkcolor-win32.o     win32/gdkglobals-win32.o  win32/gdkpixmap-win32.o \
+win32/gdkcursor-win32.o    win32/gdkim-win32.o       win32/gdkproperty-win32.o \
+win32/gdkdisplay-win32.o   win32/gdkimage-win32.o    win32/gdkscreen-win32.o \
+win32/gdkdnd-win32.o       win32/gdkinput-win32.o    win32/gdkselection-win32.o \
+win32/gdkdrawable-win32.o  win32/gdkinput.o          win32/gdkvisual-win32.o \
+win32/gdkevents-win32.o    win32/gdkkeys-win32.o     win32/gdkwin32id.o \
+win32/gdkgc-win32.o        win32/gdkmain-win32.o     win32/gdkwindow-win32.o \
+win32/gdkgeometry-win32.o  win32/gdkpango-win32.o
+
+.c.o:
+	$(CC) $(CFLAGS) $(GLIB) -c $<
+

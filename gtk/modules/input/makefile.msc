@@ -1,0 +1,2 @@
+all:
+	cl -MD -I../../../pango -I../../../gtk/gdk -I. -I../.. -I../../../glib -I../../../glib/glib -G5 -O1 -c -DG_DISABLE_CAST_CHECKS imcyrillic-translit.c

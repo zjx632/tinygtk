@@ -1,0 +1,23 @@
+CFLAGS = -O2 -march=athlon-xp
+GLIB = -I. -I.. -I../.. -I ../../../glib -I ../../../glib/glib -I ../../../glib/gmodule -I ../../../gettext-0.10.40/intl -I ../../../pango -DG_DISABLE_CHECKS  -DHAVE_CONFIG_H -DINSIDE_GDK_WIN32 -DGDK_VERSION=\"2.2\" -DG_DISABLE_CAST_CHECKS -DGDK_COMPILATION -DG_LOG_DOMAIN=\"Gdk\"
+GTK = 
+CC = gcc
+OBJ =\
+gdkcolor-win32.o     gdkglobals-win32.o  gdkpixmap-win32.o \
+gdkcursor-win32.o    gdkim-win32.o       gdkproperty-win32.o \
+gdkdisplay-win32.o   gdkimage-win32.o    gdkscreen-win32.o \
+gdkdnd-win32.o       gdkinput-win32.o    gdkselection-win32.o \
+gdkdrawable-win32.o  gdkinput.o          gdkvisual-win32.o \
+gdkevents-win32.o    gdkkeys-win32.o     gdkwin32id.o \
+gdkgc-win32.o        gdkmain-win32.o     gdkwindow-win32.o \
+gdkgeometry-win32.o  gdkpango-win32.o
+
+all: gdk-win32.a
+
+gdk-win32.a: $(OBJ)
+	ar cru gdk-win32.a $(OBJ)
+	ranlib gdk-win32.a
+
+.c.o:
+	$(CC) $(CFLAGS) $(GLIB) $(GTK) -c $<
+
